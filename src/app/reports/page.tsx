@@ -144,7 +144,7 @@ export default function ReportsPage() {
                   <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-2 px-4 text-center">
                     {categoryData.slice(0, 4).map((entry, index) => (
                       <div key={index} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-tight">
-                        <div className="w-2 h-2 rounded-full ring-2 ring-offset-2 ring-offset-background" style={{ backgroundColor: COLORS[index % COLORS.length], ringColor: COLORS[index % COLORS.length] }} />
+                        <div className="w-2.5 h-2.5 rounded-full ring-2 ring-offset-2 ring-background shadow-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                         {entry.name}
                       </div>
                     ))}

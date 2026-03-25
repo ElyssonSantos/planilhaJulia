@@ -9,9 +9,8 @@ import AuthGuard from "@/components/auth-guard";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "Julia Financial | Cofrinho",
+  title: "Julia Financial | Dashboard",
   description: "Gerenciamento financeiro pessoal da Julia",
-  manifest: "/manifest.ts",
 };
 
 export const viewport: Viewport = {
@@ -38,11 +37,12 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthGuard>
-            {/* Main Container Mobile Focused */}
-            <div className="flex flex-col min-h-screen max-w-md mx-auto relative bg-background border-x border-accent/5 shadow-2xl overflow-x-hidden">
-              <main className="flex-grow">
+            {/* Main Container Mobile Focused on Desktop */}
+            <div className="flex flex-col min-h-screen max-w-lg mx-auto relative bg-background border-x border-accent/5 shadow-2xl overflow-x-hidden pt-safe">
+              <main className="flex-grow w-full max-w-full overflow-x-hidden">
                 {children}
               </main>
+              <div className="h-24 md:h-28"></div> {/* Spacer for Nav */}
               <BottomNav />
             </div>
             <Toaster position="top-center" richColors theme="light" closeButton />

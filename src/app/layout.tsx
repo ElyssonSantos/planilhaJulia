@@ -4,12 +4,13 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/BottomNav";
 import { Toaster } from "@/components/ui/sonner";
+import AuthGuard from "@/components/auth-guard";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "Piggy Bank | Finanças",
-  description: "Gerenciamento financeiro pessoal moderno e intuitivo",
+  title: "Julia Financial | Cofrinho",
+  description: "Gerenciamento financeiro pessoal da Julia",
   manifest: "/manifest.ts",
 };
 
@@ -19,6 +20,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -27,19 +29,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${inter.variable} antialiased min-h-screen pb-20`}>
+    <html lang="pt-BR" suppressHydrationWarning className="overflow-x-hidden">
+      <body className={`${inter.variable} antialiased min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans selection:bg-green-100 selection:text-green-900`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <main className="max-w-md mx-auto min-h-screen relative shadow-2xl bg-zinc-50 dark:bg-zinc-950 overflow-x-hidden">
-            {children}
-            <BottomNav />
-          </main>
-          <Toaster position="top-center" richColors />
+          <AuthGuard>
+            {/* Main Container Mobile Focused */}
+            <div className="flex flex-col min-h-screen max-w-md mx-auto relative bg-background border-x border-accent/5 shadow-2xl overflow-x-hidden">
+              <main className="flex-grow">
+                {children}
+              </main>
+              <BottomNav />
+            </div>
+            <Toaster position="top-center" richColors theme="light" closeButton />
+          </AuthGuard>
         </ThemeProvider>
       </body>
     </html>

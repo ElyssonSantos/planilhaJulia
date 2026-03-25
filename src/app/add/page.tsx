@@ -6,10 +6,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, ArrowDownIcon, ArrowUpIcon, Save, HeartCrack, Smile } from 'lucide-react';
+import { ChevronLeft, ArrowDownIcon, ArrowUpIcon, Save, HeartCrack, Smile, Plus, LayoutGrid, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,8 +18,8 @@ import { toast } from 'sonner';
 
 const formSchema = z.object({
   type: z.enum(['income', 'expense', 'fixed_income', 'extra_income']),
-  amount: z.string().min(1, 'Valor obrigatório'),
-  category: z.string().min(2, 'Categoria obrigatória'),
+  amount: z.string().min(1, 'Informe o valor'),
+  category: z.string().min(2, 'Informe a categoria'),
   date: z.string(),
   description: z.string().optional(),
 });
@@ -49,15 +49,15 @@ export default function AddTransaction() {
       return;
     }
 
-    // Easter eggs based on type
     if (values.type.includes('income')) {
-      // Play lightweight sound here if required
-      toast.success('Renda adicionada! Porquinho está feliz 🐷', {
+      toast.success('Renda adicionada! Julia está feliz 🐷', {
+        duration: 3000,
         icon: '🐷',
-        style: { background: '#16a34a', color: 'white', border: 'none' }
+        style: { background: '#16a34a', color: 'white' }
       });
     } else {
       toast('Gasto registrado! Cuidado com o orçamento 💸', {
+        duration: 3000,
         icon: <HeartCrack className="text-red-500" />,
       });
     }
@@ -75,20 +75,30 @@ export default function AddTransaction() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen pt-8 px-4 pb-24">
-      <h1 className="text-2xl font-bold mb-6 text-foreground">Nova Transação</h1>
+    <div className="flex flex-col min-h-screen pt-4 px-4 pb-32 space-y-4">
+      {/* Header com botão de voltar */}
+      <div className="flex items-center gap-4 mb-2">
+        <button 
+          onClick={() => router.back()} 
+          className="w-10 h-10 rounded-full glass flex items-center justify-center text-foreground active:scale-90 transition-transform"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <h1 className="text-xl font-bold text-foreground">Nova Transação</h1>
+      </div>
       
-      <Card className="glass-card shadow-lg bg-card/60 border-accent">
+      <Card className="glass border-accent/20 rounded-3xl overflow-hidden shadow-xl">
         <CardContent className="pt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="flex gap-2 p-1 bg-muted rounded-xl mb-4">
+              {/* Seletor de Tipo (Gasto / Renda) */}
+              <div className="flex gap-2 p-1.5 bg-muted/60 backdrop-blur rounded-2xl mb-4 border border-accent/5">
                 <button
                   type="button"
                   onClick={() => form.setValue('type', 'expense')}
                   className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all",
-                    type === 'expense' ? "bg-red-500 text-white shadow-md shadow-red-500/20" : "text-muted-foreground hover:bg-muted-foreground/10"
+                    "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-300",
+                    type === 'expense' ? "bg-red-500 text-white shadow-lg shadow-red-500/20" : "text-muted-foreground hover:bg-muted-foreground/5 opacity-60"
                   )}
                 >
                   <ArrowDownIcon size={16} />
@@ -98,8 +108,8 @@ export default function AddTransaction() {
                   type="button"
                   onClick={() => form.setValue('type', 'income')}
                   className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all",
-                    type.includes('income') ? "bg-green-600 text-white shadow-md shadow-green-600/20" : "text-muted-foreground hover:bg-muted-foreground/10"
+                    "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-300",
+                    type.includes('income') ? "bg-green-600 text-white shadow-lg shadow-green-600/20" : "text-muted-foreground hover:bg-muted-foreground/5 opacity-60"
                   )}
                 >
                   <ArrowUpIcon size={16} />
@@ -112,18 +122,18 @@ export default function AddTransaction() {
                   control={form.control}
                   name="type"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Renda</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Modalidade</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger className="h-12 border-border/50 bg-background/50 focus:ring-green-500">
+                          <SelectTrigger className="h-14 border-accent/10 bg-background/50 rounded-2xl focus:ring-green-500 text-base">
                             <SelectValue placeholder="Selecione o tipo" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="income">Geral</SelectItem>
-                          <SelectItem value="fixed_income">Renda Fixa (Mensal)</SelectItem>
-                          <SelectItem value="extra_income">Renda Extra</SelectItem>
+                        <SelectContent className="rounded-2xl border-accent/20">
+                          <SelectItem value="income" className="py-3 rounded-xl">💰 Ganhos em Geral</SelectItem>
+                          <SelectItem value="fixed_income" className="py-3 rounded-xl">🏠 Salário/Fixo</SelectItem>
+                          <SelectItem value="extra_income" className="py-3 rounded-xl">✨ Renda Extra</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -132,25 +142,27 @@ export default function AddTransaction() {
                 />
               )}
 
+              {/* Valor Principal */}
               <FormField
                 control={form.control}
                 name="amount"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor</FormLabel>
+                  <FormItem className="space-y-1">
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Valor</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <span className="absolute left-3 top-3.5 text-muted-foreground font-medium">R$</span>
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-muted-foreground group-focus-within:text-green-600 transition-colors">R$</span>
                         <Input 
                           placeholder="0,00" 
                           type="number" 
                           step="0.01" 
-                          className="pl-10 h-14 text-lg font-bold border-border/50 bg-background/50 focus:ring-green-500" 
+                          className="pl-14 h-20 text-3xl font-black border-accent/10 bg-background/50 rounded-2xl focus:ring-green-500 focus:border-green-500 transition-all tracking-tight" 
                           {...field} 
+                          autoFocus
                         />
                       </div>
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="ml-1" />
                   </FormItem>
                 )}
               />
@@ -160,10 +172,10 @@ export default function AddTransaction() {
                   control={form.control}
                   name="category"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Categoria</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-1.5"><LayoutGrid size={12}/> Categoria</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: Mercado" className="h-12 border-border/50 bg-background/50 focus:ring-green-500" {...field} />
+                        <Input placeholder="Ex: Mercado" className="h-14 border-accent/10 bg-background/50 rounded-2xl focus:ring-green-500 text-base font-bold placeholder:font-normal" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -174,10 +186,10 @@ export default function AddTransaction() {
                   control={form.control}
                   name="date"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-1.5"><Calendar size={12}/> Data</FormLabel>
                       <FormControl>
-                        <Input type="date" className="h-12 border-border/50 bg-background/50 focus:ring-green-500" {...field} />
+                        <Input type="date" className="h-14 border-accent/10 bg-background/50 rounded-2xl focus:ring-green-500 text-base font-bold" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -189,24 +201,26 @@ export default function AddTransaction() {
                 control={form.control}
                 name="description"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição (Opcional)</FormLabel>
+                  <FormItem className="space-y-1">
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Descrição</FormLabel>
                     <FormControl>
-                      <Input placeholder="Detalhes adicionais..." className="h-12 border-border/50 bg-background/50 focus:ring-green-500" {...field} />
+                      <Input placeholder="Sobre o que é este gasto?" className="h-14 border-accent/10 bg-background/50 rounded-2xl focus:ring-green-500 text-base" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <Button type="submit" className="w-full h-14 rounded-xl font-bold text-lg bg-green-600 hover:bg-green-700 shadow-md shadow-green-600/20 active:scale-95 transition-all">
-                <Save className="mr-2" />
-                Salvar Transação
+              <Button type="submit" className="w-full h-16 rounded-2xl font-black text-lg bg-green-600 hover:bg-green-700 shadow-xl shadow-green-500/30 active:scale-95 transition-all mt-4 text-white uppercase tracking-wider flex items-center gap-3">
+                <Plus size={24} />
+                Lançar {type.includes('income') ? 'Renda' : 'Gasto'}
               </Button>
             </form>
           </Form>
         </CardContent>
       </Card>
+      
+      <p className="text-[10px] text-center text-muted-foreground font-medium uppercase tracking-widest opacity-50 px-4">Esta ação atualizará seu saldo e gráficos automaticamente.</p>
     </div>
   );
 }

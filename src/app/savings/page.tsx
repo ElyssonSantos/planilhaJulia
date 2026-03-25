@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { PiggyBank, Target, Plus, TrendingUp, Sparkles, ArrowUpIcon } from 'lucide-react';
+import { PiggyBank, Target, Plus, TrendingUp, Sparkles, ArrowUpIcon, TrendingDown, LayoutGrid, Award, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function SavingsPage() {
@@ -43,13 +43,9 @@ export default function SavingsPage() {
     updatePiggyBank(newTotal);
     setDepositAmount('');
     
-    // Easter Egg
-    const sound = new Audio('/coin.mp3'); // Mock path for actual coin sound
-    sound.volume = 0.5;
-    sound.play().catch(() => {});
-    
     if (newTotal >= piggyBank.target_amount && piggyBank.current_amount < piggyBank.target_amount) {
       toast('PARABÉNS! Você atingiu sua meta! 🐷🎉🎊', {
+        duration: 5000,
         icon: <Sparkles className="text-yellow-400" />,
         style: { background: '#16a34a', color: 'white' },
       });
@@ -60,155 +56,180 @@ export default function SavingsPage() {
 
   const calculateProjectedYield = () => {
     if (!piggyBank) return 0;
-    // Simple mock calculation: current amount * yield rate / 100 for a month
     return (piggyBank.current_amount * (piggyBank.yield_rate / 100));
   };
 
   return (
-    <div className="flex flex-col min-h-screen pt-8 px-4 pb-24 space-y-6">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600">
-          <PiggyBank size={24} />
+    <div className="flex flex-col min-h-screen pt-4 px-4 pb-32 space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center text-green-600 border border-green-500/20 shrink-0">
+          <PiggyBank size={20} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Cofrinho</h1>
-          <p className="text-sm text-muted-foreground">Suas economias rendendo</p>
+          <h1 className="text-xl font-bold text-foreground">Meu Cofrinho</h1>
+          <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">Metas e Economias</p>
         </div>
       </div>
 
       {!piggyBank && !isCreating ? (
-        <Card className="glass-card text-center py-10 border-dashed border-2 border-green-500/30">
-          <CardContent className="flex flex-col items-center justify-center p-6 gap-4">
-            <PiggyBank size={64} className="text-green-500/50" />
-            <div className="space-y-2">
-              <h3 className="font-bold text-xl">Nenhum cofrinho</h3>
-              <p className="text-sm text-muted-foreground">Comece a poupar criando um objetivo financeiro.</p>
+        <Card className="glass text-center py-12 border-dashed border-2 border-green-500/30 rounded-3xl overflow-hidden active:scale-[0.98] transition-all">
+          <CardContent className="flex flex-col items-center justify-center p-6 gap-6">
+            <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center text-green-500/50">
+               <PiggyBank size={48} />
             </div>
-            <Button onClick={() => setIsCreating(true)} className="bg-green-600 hover:bg-green-700 mt-4 rounded-xl shadow-md h-12 w-full max-w-[200px]">
-              <Plus className="mr-2 h-5 w-5" /> Criar Cofrinho
+            <div className="space-y-2">
+              <h3 className="font-black text-xl tracking-tight">Crie seu primeiro cofrinho!</h3>
+              <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-widest max-w-[240px] leading-tight">Comece a poupar dinheiro com objetivos claros e metas reais.</p>
+            </div>
+            <Button onClick={() => setIsCreating(true)} className="bg-green-600 hover:bg-green-700 mt-4 rounded-2xl shadow-xl shadow-green-600/20 h-14 w-full max-w-[200px] font-black text-base uppercase tracking-widest text-white">
+              <Plus className="mr-2 h-5 w-5" /> Começar
             </Button>
           </CardContent>
         </Card>
       ) : isCreating ? (
-        <Card className="glass-card bg-card/60">
-          <CardHeader>
-            <CardTitle>Novo Cofrinho 🐷</CardTitle>
-            <CardDescription>Defina sua meta e comece a poupar.</CardDescription>
+        <Card className="glass border-accent/10 rounded-3xl overflow-hidden shadow-2xl">
+          <CardHeader className="pt-8 px-6 pb-2">
+            <CardTitle className="text-lg font-black uppercase tracking-wider flex items-center gap-2">
+              <Sparkles size={18} className="text-green-500" />
+              Novo Objetivo Julia
+            </CardTitle>
+            <CardDescription className="text-xs uppercase font-bold opacity-60">Planeje seu próximo sonho financeiro</CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreate} className="space-y-4">
+          <CardContent className="p-6">
+            <form onSubmit={handleCreate} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Nome (Ex: Viagem, Carro)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-1.5"><LayoutGrid size={12}/> Nome da Meta</label>
                 <Input 
                   value={newBank.name} 
                   onChange={(e) => setNewBank({...newBank, name: e.target.value})}
-                  className="bg-background/50 h-12"
-                  placeholder="Seu grande sonho..."
+                  className="bg-background/50 h-14 rounded-2xl border-accent/10 text-base font-bold"
+                  placeholder="Ex: Viagem, Carro, Notebook..."
                   required
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Meta (R$)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-1.5"><Target size={12}/> Valor Alvo (R$)</label>
                 <Input 
                   value={newBank.target} 
                   onChange={(e) => setNewBank({...newBank, target: e.target.value})}
-                  className="bg-background/50 h-12 text-lg font-bold"
+                  className="bg-background/50 h-14 rounded-2xl border-accent/10 text-xl font-black"
                   type="number"
                   placeholder="0,00"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Rendimento Mensal Estimado (%)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-1.5"><TrendingUp size={12}/> Rendimento (%)</label>
                 <Input 
                   value={newBank.yieldRate} 
                   onChange={(e) => setNewBank({...newBank, yieldRate: e.target.value})}
-                  className="bg-background/50 h-12"
+                  className="bg-background/50 h-14 rounded-2xl border-accent/10 text-base"
                   type="number"
                   step="0.01"
+                  placeholder="Ex: 1"
                 />
               </div>
-              <div className="flex gap-2 pt-2">
-                <Button type="button" variant="outline" className="flex-1 h-12 rounded-xl" onClick={() => setIsCreating(false)}>
+              <div className="flex gap-3 pt-2">
+                <Button type="button" variant="ghost" className="flex-1 h-14 rounded-2xl font-bold uppercase text-[11px] tracking-widest" onClick={() => setIsCreating(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" className="flex-1 h-12 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold">
-                  Criar
+                <Button type="submit" className="flex-1 h-14 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black uppercase tracking-widest text-[11px] shadow-xl shadow-green-600/20">
+                  Criar Agora
                 </Button>
               </div>
             </form>
           </CardContent>
         </Card>
       ) : piggyBank ? (
-        <div className="space-y-6">
-          <Card className="glass-card shadow-lg bg-gradient-to-br from-green-500 to-green-700 text-white overflow-hidden relative">
-            <div className="absolute -right-4 -top-8 text-white/10">
-              <PiggyBank size={160} />
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-5 duration-500">
+          {/* Card do Cofrinho Principal */}
+          <Card className="bg-gradient-to-br from-green-600 to-green-800 text-white border-none shadow-2xl shadow-green-600/30 overflow-hidden relative rounded-3xl">
+            <div className="absolute -right-6 -top-10 text-white/10 rotate-12">
+              <PiggyBank size={200} />
             </div>
-            <CardContent className="p-6 relative z-10">
-              <div className="flex justify-between items-start mb-6">
+            <CardContent className="p-7 relative z-10">
+              <div className="flex justify-between items-start mb-8">
                 <div>
-                  <p className="font-medium text-green-100 flex items-center gap-2">
-                    <Target size={16} /> Meta: {piggyBank.name}
-                  </p>
-                  <h2 className="text-4xl font-extrabold mt-1">
+                  <div className="flex items-center gap-2 mb-1.5 px-2 py-0.5 bg-white/10 rounded-full w-fit">
+                    <Award size={12} className="text-green-300" />
+                    <span className="text-[10px] uppercase font-black tracking-widest">{piggyBank.name}</span>
+                  </div>
+                  <h2 className="text-4xl font-black tracking-tight mt-1">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(piggyBank.current_amount)}
                   </h2>
                 </div>
               </div>
               
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-sm text-green-50 font-medium">
-                  <span>Progresso</span>
+              <div className="space-y-2.5 mb-6">
+                <div className="flex justify-between text-[11px] text-green-100 font-black uppercase tracking-widest">
+                  <span>Seu Progresso</span>
                   <span>{Math.min(100, (piggyBank.current_amount / piggyBank.target_amount) * 100).toFixed(1)}%</span>
                 </div>
-                <Progress 
-                  value={(piggyBank.current_amount / piggyBank.target_amount) * 100} 
-                  className="h-3 bg-green-900/50" 
-                  // indicatorClassName="bg-white" // handled in global css or directly mapping
-                />
-                <p className="text-xs text-green-100 text-right">
-                  de {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(piggyBank.target_amount)}
-                </p>
+                <div className="relative h-4 w-full bg-green-900/50 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-white transition-all duration-1000 ease-out flex items-center justify-end pr-1 shadow-[0_0_15px_rgba(255,255,255,0.4)]"
+                    style={{ width: `${Math.min(100, (piggyBank.current_amount / piggyBank.target_amount) * 100)}%` }}
+                  >
+                     <div className="w-2 h-2 rounded-full bg-green-600" />
+                  </div>
+                </div>
+                <div className="flex justify-between items-center text-[10px] text-green-100/70 font-bold uppercase tracking-widest">
+                  <p>Início</p>
+                  <p>de {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(piggyBank.target_amount)}</p>
+                </div>
               </div>
 
-              <div className="bg-white/20 p-3 rounded-xl flex items-center gap-3">
-                <TrendingUp size={20} className="text-green-50" />
+              <div className="bg-white/15 backdrop-blur-md p-4 rounded-2xl flex items-center gap-4 border border-white/10">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white shrink-0">
+                  <TrendingUp size={20} />
+                </div>
                 <div>
-                  <p className="text-xs text-green-100">Rendimento mensal estimado (+{piggyBank.yield_rate}%)</p>
-                  <p className="font-bold text-sm">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateProjectedYield())}
+                  <p className="text-[10px] text-green-100/80 font-black uppercase tracking-widest mb-0.5">Rendimento Acumulado (+{piggyBank.yield_rate}%)</p>
+                  <p className="font-black text-base">
+                    +{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateProjectedYield())}
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="glass-card bg-card/60">
-            <CardContent className="p-5">
-              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Plus size={18} className="text-green-500" />
-                Guardar Dinheiro
-              </h3>
-              <form onSubmit={handleDeposit} className="flex gap-3">
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-3.5 text-muted-foreground font-medium">R$</span>
-                  <Input 
-                    value={depositAmount} 
-                    onChange={(e) => setDepositAmount(e.target.value)}
-                    type="number" 
-                    step="0.01"
-                    placeholder="0,00"
-                    className="pl-10 h-14 bg-background/50 border-border/50 text-lg font-bold w-full"
-                    required 
-                  />
+          {/* Card de Depósito */}
+          <Card className="glass border-accent/10 rounded-3xl overflow-hidden shadow-xl">
+            <CardContent className="p-6">
+              <div className="flex flex-col gap-5">
+                <div>
+                  <h3 className="font-black text-sm text-foreground uppercase tracking-widest flex items-center gap-2">
+                    <Plus size={16} className="text-green-500" />
+                    Guardar no Cofrinho
+                  </h3>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase opacity-50 ml-6">Cada real conta para o seu sonho!</p>
                 </div>
-                <Button type="submit" className="h-14 w-14 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center shrink-0 p-0">
-                  <ArrowUpIcon size={24} />
-                </Button>
-              </form>
+                
+                <form onSubmit={handleDeposit} className="flex gap-4">
+                  <div className="relative flex-1 group">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-black text-muted-foreground group-focus-within:text-green-600">R$</span>
+                    <Input 
+                      value={depositAmount} 
+                      onChange={(e) => setDepositAmount(e.target.value)}
+                      type="number" 
+                      step="0.01"
+                      placeholder="0,00"
+                      className="pl-12 h-16 bg-background/50 border-accent/10 rounded-2xl text-xl font-extrabold w-full focus:ring-green-500 transition-all"
+                      required 
+                    />
+                  </div>
+                  <Button type="submit" className="h-16 w-16 bg-green-600 hover:bg-green-700 text-white rounded-2xl shadow-xl shadow-green-600/20 flex items-center justify-center shrink-0 p-0 active:scale-90 transition-transform">
+                    <ArrowUpIcon size={28} />
+                  </Button>
+                </form>
+              </div>
             </CardContent>
           </Card>
+          
+          <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-2xl border border-accent/5 opacity-70">
+            <Info size={16} className="text-muted-foreground shrink-0 mt-0.5" />
+            <p className="text-[10px] font-bold text-muted-foreground leading-snug uppercase tracking-tight">O rendimento é simulado apenas para visualização. Seus valores reais dependem de onde você aplica o dinheiro.</p>
+          </div>
         </div>
       ) : null}
     </div>

@@ -1,6 +1,13 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
+export interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+}
+
 export interface Transaction {
   id: string;
   type: 'income' | 'expense' | 'fixed_income' | 'extra_income';
@@ -18,13 +25,25 @@ interface PiggyBank {
   yield_rate: number;
 }
 
+const DEFAULT_CATEGORIES: Category[] = [
+  { id: '1', name: 'Mercado', icon: '🛒', color: '#16a34a' },
+  { id: '2', name: 'Alimentação', icon: '🍔', color: '#ea580c' },
+  { id: '3', name: 'Lazer', icon: '🎡', color: '#9333ea' },
+  { id: '4', name: 'Saúde', icon: '💊', color: '#e11d48' },
+  { id: '5', name: 'Transporte', icon: '🚗', color: '#2563eb' },
+  { id: '6', name: 'Salário', icon: '💰', color: '#16a34a' },
+];
+
 interface FinanceStore {
   user: { id: string; email: string } | null;
   transactions: Transaction[];
+  categories: Category[];
   piggyBank: PiggyBank | null;
   setUser: (user: { id: string; email: string } | null) => void;
   addTransaction: (transaction: Transaction) => void;
   removeTransaction: (id: string) => void;
+  addCategory: (category: Category) => void;
+  removeCategory: (id: string) => void;
   setPiggyBank: (piggyBank: PiggyBank | null) => void;
   updatePiggyBank: (amount: number) => void;
   clearAll: () => void;
@@ -35,6 +54,7 @@ export const useFinanceStore = create<FinanceStore>()(
     (set) => ({
       user: null,
       transactions: [],
+      categories: DEFAULT_CATEGORIES,
       piggyBank: null,
       setUser: (user) => set({ user }),
       addTransaction: (transaction) =>
@@ -43,12 +63,18 @@ export const useFinanceStore = create<FinanceStore>()(
         set((state) => ({
           transactions: state.transactions.filter((t) => t.id !== id),
         })),
+      addCategory: (category) =>
+        set((state) => ({ categories: [...state.categories, category] })),
+      removeCategory: (id) =>
+        set((state) => ({
+          categories: state.categories.filter((c) => c.id !== id),
+        })),
       setPiggyBank: (piggyBank) => set({ piggyBank }),
       updatePiggyBank: (amount) =>
         set((state) => ({
           piggyBank: state.piggyBank ? { ...state.piggyBank, current_amount: amount } : null,
         })),
-      clearAll: () => set({ transactions: [], piggyBank: null, user: null }),
+      clearAll: () => set({ transactions: [], piggyBank: null, user: null, categories: DEFAULT_CATEGORIES }),
     }),
     {
       name: 'finance-storage',

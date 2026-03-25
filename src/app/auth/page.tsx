@@ -19,6 +19,8 @@ const authSchema = z.object({
   password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
 });
 
+import { translateError } from '@/lib/translate-errors';
+
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -58,7 +60,7 @@ export default function AuthPage() {
       }
       router.push('/');
     } catch (error: any) {
-      toast.error(error.message || 'Erro na autenticação');
+      toast.error(translateError(error));
     } finally {
       setLoading(false);
     }

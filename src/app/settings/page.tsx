@@ -6,7 +6,7 @@ import { useFinanceStore, Category } from '@/stores/financeStore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sun, Moon, Monitor, Trash2, Database, ShieldCheck, LogOut, Settings as SettingsIcon, Plus, Tag, X, Sparkles, LayoutGrid } from 'lucide-react';
+import { Sun, Moon, Monitor, Trash2, Database, ShieldCheck, LogOut, Settings as SettingsIcon, Plus, Tag, X, Sparkles, Target, Landmark, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
@@ -14,12 +14,20 @@ import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { clearAll, user, setUser, categories, addCategory, removeCategory } = useFinanceStore();
+  const { clearAll, user, setUser, categories, addCategory, removeCategory, monthlyLimit, setMonthlyLimit } = useFinanceStore();
   const router = useRouter();
 
   const [newCatName, setNewCatName] = useState('');
   const [newCatIcon, setNewCatIcon] = useState('💰');
   const [showAddCat, setShowAddCat] = useState(false);
+  const [tempLimit, setTempLimit] = useState(monthlyLimit.toString());
+
+  const handleUpdateLimit = () => {
+    const val = parseFloat(tempLimit);
+    if (isNaN(val) || val < 0) return toast.error('Digite um valor válido');
+    setMonthlyLimit(val);
+    toast.success(`Teto de gastos atualizado para ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)}! 🐷🛡️`);
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -62,6 +70,45 @@ export default function SettingsPage() {
           <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">Configurações do App</p>
         </div>
       </div>
+
+      {/* NOVO: Limite de Gastos (Teto Mensal) 🐷🛡️ */}
+      <Card className="glass border-accent/10 rounded-3xl overflow-hidden shadow-lg border-l-4 border-l-yellow-500">
+        <CardHeader className="pb-4 px-6 pt-6">
+          <CardTitle className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
+            <Target size={14} className="text-yellow-600" />
+            Teto de Gastos Mensal
+          </CardTitle>
+          <CardDescription className="text-[9px] font-medium uppercase opacity-50 tracking-tighter">Qual o valor máximo que você pode gastar?</CardDescription>
+        </CardHeader>
+        <CardContent className="px-6 pb-6 space-y-4">
+           <div className="flex gap-2">
+              <div className="relative flex-1">
+                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-muted-foreground opacity-50">R$</span>
+                 <Input 
+                   type="number" 
+                   placeholder="Ex: 800" 
+                   value={tempLimit}
+                   onChange={(e) => setTempLimit(e.target.value)}
+                   className="h-14 pl-12 glass border-accent/5 rounded-xl font-black text-lg focus:ring-yellow-500"
+                 />
+              </div>
+              <Button 
+                onClick={handleUpdateLimit}
+                className="h-14 w-14 rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white shadow-lg shadow-yellow-500/20 p-0"
+              >
+                 <ShieldCheck size={20} />
+              </Button>
+           </div>
+           {monthlyLimit > 0 && (
+             <div className="flex items-center gap-2 p-3 bg-yellow-500/5 rounded-xl border border-yellow-500/10">
+                <AlertCircle size={14} className="text-yellow-600" />
+                <p className="text-[10px] font-bold text-muted-foreground uppercase leading-tight">
+                  Sempre que passar de {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyLimit)}, o Julia Bank emitirá um aviso vermelho no Dashboard.
+                </p>
+             </div>
+           )}
+        </CardContent>
+      </Card>
 
       {/* Minhas Categorias */}
       <Card className="glass border-accent/10 rounded-3xl overflow-hidden shadow-lg border-l-4 border-l-green-600">
@@ -111,7 +158,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 text-center">
             {categories.map((c) => (
               <div 
                 key={c.id} 
@@ -159,50 +206,9 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="glass border-accent/10 rounded-3xl overflow-hidden shadow-lg">
-        <CardHeader className="pb-2 px-6 pt-6 text-green-600">
-           <CardTitle className="text-sm font-black uppercase tracking-wider flex items-center gap-2">
-            <Database size={16} /> Suas Conexões
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-           {user ? (
-             <div className="flex items-center justify-between p-4 bg-green-500/5 rounded-2xl border border-green-500/10 mb-2">
-                <div className="flex items-center gap-3">
-                   <div className="w-9 h-9 bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg"><ShieldCheck size={18} /></div>
-                   <div className="overflow-hidden max-w-[150px]">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-green-600">Online & Seguro</p>
-                      <p className="text-xs font-bold truncate opacity-50">{user.email}</p>
-                   </div>
-                </div>
-                <Button variant="ghost" className="h-10 w-10 p-0 rounded-xl" onClick={handleLogout}>
-                   <LogOut size={18} className="text-muted-foreground" />
-                </Button>
-             </div>
-           ) : (
-             <Button className="w-full bg-red-500 text-white h-14 rounded-2xl font-black text-xs uppercase" onClick={() => router.push('/auth')}>Conectar com Supabase</Button>
-           )}
-        </CardContent>
-      </Card>
-
-      <Card className="glass border-red-500/20 rounded-3xl overflow-hidden shadow-lg">
-        <CardHeader className="pb-2 px-6 pt-6 text-red-500">
-          <CardTitle className="text-sm font-black uppercase tracking-wider flex items-center gap-2"><Trash2 size={16} /> Perigo</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <Button 
-            variant="destructive" 
-            className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-500/10"
-            onClick={() => { if (confirm('Limpar TUDO?')) { clearAll(); toast.success('Resetado!'); } }}
-          >
-            Resetar Todos os Dados Locais
-          </Button>
-        </CardContent>
-      </Card>
-      
       <div className="py-10 text-center opacity-30">
-         <p className="text-[10px] font-black uppercase tracking-[0.2em]">Julia Financial v1.1.0</p>
-         <p className="text-[9px] font-bold mt-1 uppercase">Personal Category System Active 🎨</p>
+         <p className="text-[10px] font-black uppercase tracking-[0.2em]">Julia Financial v1.2.0</p>
+         <p className="text-[9px] font-bold mt-1 uppercase">Budget Limit Master System Active 🛡️</p>
       </div>
     </div>
   );

@@ -38,12 +38,14 @@ interface FinanceStore {
   user: { id: string; email: string } | null;
   transactions: Transaction[];
   categories: Category[];
+  monthlyLimit: number;
   piggyBank: PiggyBank | null;
   setUser: (user: { id: string; email: string } | null) => void;
   addTransaction: (transaction: Transaction) => void;
   removeTransaction: (id: string) => void;
   addCategory: (category: Category) => void;
   removeCategory: (id: string) => void;
+  setMonthlyLimit: (limit: number) => void;
   setPiggyBank: (piggyBank: PiggyBank | null) => void;
   updatePiggyBank: (amount: number) => void;
   clearAll: () => void;
@@ -55,6 +57,7 @@ export const useFinanceStore = create<FinanceStore>()(
       user: null,
       transactions: [],
       categories: DEFAULT_CATEGORIES,
+      monthlyLimit: 0,
       piggyBank: null,
       setUser: (user) => set({ user }),
       addTransaction: (transaction) =>
@@ -69,12 +72,13 @@ export const useFinanceStore = create<FinanceStore>()(
         set((state) => ({
           categories: state.categories.filter((c) => c.id !== id),
         })),
+      setMonthlyLimit: (monthlyLimit) => set({ monthlyLimit }),
       setPiggyBank: (piggyBank) => set({ piggyBank }),
       updatePiggyBank: (amount) =>
         set((state) => ({
           piggyBank: state.piggyBank ? { ...state.piggyBank, current_amount: amount } : null,
         })),
-      clearAll: () => set({ transactions: [], piggyBank: null, user: null, categories: DEFAULT_CATEGORIES }),
+      clearAll: () => set({ transactions: [], piggyBank: null, user: null, categories: DEFAULT_CATEGORIES, monthlyLimit: 0 }),
     }),
     {
       name: 'finance-storage',

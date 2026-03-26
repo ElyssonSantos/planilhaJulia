@@ -206,9 +206,11 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <div className="py-10 text-center opacity-30">
-         <p className="text-[10px] font-black uppercase tracking-[0.2em]">Julia Financial v1.2.0</p>
-         <p className="text-[9px] font-bold mt-1 uppercase">Budget Limit Master System Active 🛡️</p>
+      <div className="py-10 text-center opacity-40 px-6">
+         <p className="text-[10px] font-black uppercase tracking-[0.2em]">Banco Exclusivo de Julia Cristina 🐷💎</p>
+         <p className="text-[9px] font-bold mt-2 uppercase leading-relaxed text-muted-foreground/60">
+            Sistema desenvolvido por Elysson, se tiver feio ou ruim, me pague que eu melhoro 🥰
+         </p>
       </div>
     </div>
   );

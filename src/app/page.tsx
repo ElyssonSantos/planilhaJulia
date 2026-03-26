@@ -19,13 +19,15 @@ import {
   AlertTriangle,
   Info,
   CheckCircle2,
-  X
+  X,
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   BarChart, 
   Bar, 
@@ -41,6 +43,23 @@ import { toast } from 'sonner';
 export default function Dashboard() {
   const { transactions, monthlyLimit } = useFinanceStore();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Garantir que o gráfico e a página carreguem apenas no cliente (Browser)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center space-y-4">
+         <div className="w-16 h-16 bg-green-600 rounded-[24px] flex items-center justify-center text-white shadow-2xl animate-bounce">
+            <PiggyBank size={32} />
+         </div>
+         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-green-600 animate-pulse">Carregando Banco da Julia...</p>
+      </div>
+    );
+  }
 
   const totalIncome = transactions
     .filter((t) => t.type !== 'expense')
@@ -62,11 +81,10 @@ export default function Dashboard() {
 
   const recentTransactions = transactions.slice(0, 5);
 
-  // Sistema de Gerador de Notificações Inteligentes 🐷🔔
   const notifications = [
     { id: '1', title: 'Boas-vindas Julia!', text: 'Seu Banco Exclusivo está pronto para economizar.', icon: Sparkles, color: 'text-green-600' },
     ...(isOverLimit ? [{ id: '2', title: 'Limite Excedido!', text: 'Julia, você passou do teto planejado para o mês 😱', icon: AlertTriangle, color: 'text-red-500' }] : []),
-    ...(balance > 500 ? [{ id: '3', title: 'Uau, Julia!', text: 'Sua conta está super saudável hoje! 🐷💰', icon: CheckCircle2, color: 'text-green-600' }] : []),
+    ...(balance > 500 ? [{ id: '3', title: 'Uau, Julia!', text: 'Sua conta está super saudável hoje! 💰', icon: CheckCircle2, color: 'text-green-600' }] : []),
     ...(transactions.length > 0 ? [{ id: '4', title: 'Lançamento Master', text: `Último registro: ${transactions[0].description || transactions[0].category}`, icon: Info, color: 'text-blue-500' }] : []),
   ];
 
@@ -97,7 +115,6 @@ export default function Dashboard() {
               )}
            </button>
 
-           {/* Painel de Notificações 🔔 */}
            {showNotifications && (
              <Card className="absolute top-14 right-0 w-72 z-50 glass border-accent/10 rounded-3xl shadow-2xl animate-in slide-in-from-top-4 duration-300 overflow-hidden">
                 <CardHeader className="bg-muted/30 pb-3 px-5 flex flex-row items-center justify-between">
@@ -122,7 +139,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Card de Saldo Master */}
       <Card className="bg-zinc-900 border-none rounded-[40px] shadow-2xl relative overflow-hidden group">
          <div className="absolute top-0 right-0 p-8 text-white/5 transform rotate-12 group-hover:scale-110 transition-transform">
             <Wallet size={120} />
@@ -134,7 +150,6 @@ export default function Dashboard() {
                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(balance)}
                </h2>
             </div>
-
             <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-6">
                <div className="space-y-1">
                   <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-green-500">
@@ -156,7 +171,6 @@ export default function Dashboard() {
          </CardContent>
       </Card>
 
-      {/* MONITOR DE LIMITE DE GASTOS 🛡️ */}
       {monthlyLimit > 0 && (
         <Card className={cn(
           "rounded-[32px] border-none shadow-xl animate-in fade-in duration-500 overflow-hidden",
@@ -172,14 +186,12 @@ export default function Dashboard() {
                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalExpense)} / {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyLimit)}
                 </span>
              </div>
-             
              <div className={cn("h-3 w-full rounded-full overflow-hidden p-0.5 shadow-inner", isOverLimit || limitReached > 80 ? "bg-black/10" : "bg-muted")}>
                 <div 
                    className={cn("h-full transition-all duration-1000 ease-out rounded-full shadow-lg", isOverLimit ? "bg-white" : limitReached > 80 ? "bg-yellow-900" : "bg-green-600")}
                    style={{ width: `${Math.min(limitReached, 100)}%` }}
                 />
              </div>
-             
              <p className="text-[11px] font-bold uppercase tracking-tight opacity-70">
                {isOverLimit 
                  ? "Heeey Julia! Você passou do limite de segurança! 😱" 
@@ -191,7 +203,6 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Fluxo de Caixa */}
       <Card className="glass border-accent/10 rounded-[40px] overflow-hidden shadow-2xl">
          <CardHeader className="pb-2">
             <CardTitle className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-2">
@@ -203,11 +214,11 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 0, right: 30, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase' }} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
                   <Tooltip 
                     cursor={{ fill: 'rgba(0,0,0,0.02)' }} 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }} 
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', fontSize: '11px', fontWeight: 'bold' }} 
                   />
                   <Bar dataKey="valor" radius={[14, 14, 4, 4]} barSize={60}>
                     {chartData.map((entry, index) => (
@@ -234,7 +245,6 @@ export default function Dashboard() {
              Ver Tudo <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
            </Link>
         </div>
-        
         <div className="space-y-3">
            {recentTransactions.map((t) => (
              <div key={t.id} className="flex items-center justify-between p-5 glass border-accent/5 rounded-[30px] shadow-sm hover:border-green-600/20 transition-all active:scale-95 group relative overflow-hidden">
@@ -268,5 +278,29 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+  );
+}
+
+function PiggyBank({ size }: { size: number }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={size} 
+      height={size} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2.5" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    >
+      <path d="M19 18.5c.33.16.5.49.5.83a2 2 0 0 1-2 2 2 2 0 0 1-2-2c0-.34.17-.67.5-.83" />
+      <path d="M5 18.5c-.33.16-.5.49-.5.83a2 2 0 0 0 2 2 2 2 0 0 0 2-2c0-.34-.17-.67-.5-.83" />
+      <path d="M12 4.5V2" />
+      <path d="M16 11c0-4.5-4-7-4-7s-4 2.5-4 7" />
+      <path d="M3 11c0 7 5 7 9 7s9 0 9-7-5-7-9-7-9 0-9 7Z" />
+      <path d="M12 11h.01" />
+      <path d="M12 14h.01" />
+    </svg>
   );
 }

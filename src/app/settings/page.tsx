@@ -205,6 +205,18 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Sair da Conta */}
+      <div className="px-2">
+        <Button 
+          onClick={handleLogout}
+          variant="ghost"
+          className="w-full h-14 rounded-2xl border border-red-500/10 text-red-500 hover:bg-red-500 hover:text-white font-black text-[12px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 active:scale-95"
+        >
+          <LogOut size={20} />
+          Sair do Julia Bank
+        </Button>
+      </div>
 
       <div className="py-10 text-center opacity-40 px-6">
          <p className="text-[10px] font-black uppercase tracking-[0.2em]">Banco Exclusivo de Julia Cristina 🐷💎</p>

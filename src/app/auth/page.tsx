@@ -17,7 +17,7 @@ import { translateError } from '@/lib/translate-errors';
 
 const authSchema = z.object({
   username: z.string().min(3, 'Seu login precisa de pelo menos 3 letras! 👤'),
-  email: z.string().email('E-mail inválido, mano! 📧'),
+  email: z.string().email('E-mail inválido, mano! 📧').optional().or(z.literal('')),
   password: z.string().min(6, 'A senha deve ter pelo menos 6 letras! 🔐'),
 });
 
@@ -36,9 +36,18 @@ export default function AuthPage() {
     setLoading(true);
     try {
       if (isLogin) {
-        // No login do Supabase, usamos o email e senha
+        // Buscar o email associado ao username no perfil
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('username', values.username)
+          .maybeSingle();
+
+        if (profileError) throw profileError;
+        if (!profile) throw new Error('Usuário não encontrado! Verifique seu login. 👤');
+
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: values.email,
+          email: profile.email || '',
           password: values.password,
         });
         if (error) throw error;
@@ -46,9 +55,14 @@ export default function AuthPage() {
         if (data.user) {
           setUser({ id: data.user.id, email: data.user.email || '' });
           toast.success('Seja bem-vinda(o) ao Julia Bank! 🐷🚀');
-          router.replace('/'); // Use replace para evitar o loop
+          router.replace('/');
         }
       } else {
+        if (!values.email) {
+          toast.error("O e-mail é obrigatório para criar sua conta! 📧");
+          return;
+        }
+
         // No cadastro, usamos email, senha e salvamos o username nos metadados
         const { data, error } = await supabase.auth.signUp({
           email: values.email,
@@ -111,7 +125,7 @@ export default function AuthPage() {
                         <div className="relative group">
                           <UserCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-green-600 transition-colors" />
                           <Input
-                            placeholder="Ex: @julia_financeira"
+                            placeholder="Ex: Nome_Sobrenome"
                             className="bg-background/50 h-14 pl-12 rounded-2xl border-accent/10 text-xs font-bold focus:ring-green-600 shadow-inner"
                             {...field}
                           />
@@ -122,26 +136,28 @@ export default function AuthPage() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-[10px] font-black uppercase tracking-widest ml-1 text-muted-foreground opacity-60">E-mail</FormLabel>
-                      <FormControl>
-                        <div className="relative group">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-green-600 transition-colors" />
-                          <Input
-                            placeholder="ex: julia@gmail.com"
-                            className="bg-background/50 h-14 pl-12 rounded-2xl border-accent/10 text-xs font-bold focus:ring-green-600 shadow-inner"
-                            {...field}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {!isLogin && (
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest ml-1 text-muted-foreground opacity-60">E-mail</FormLabel>
+                        <FormControl>
+                          <div className="relative group">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-green-600 transition-colors" />
+                            <Input
+                              placeholder="ex: blabla@gmail.com"
+                              className="bg-background/50 h-14 pl-12 rounded-2xl border-accent/10 text-xs font-bold focus:ring-green-600 shadow-inner"
+                              {...field}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}
@@ -165,13 +181,18 @@ export default function AuthPage() {
                   )}
                 />
 
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-15 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black text-sm uppercase tracking-widest shadow-2xl shadow-green-600/30 active:scale-95 transition-all flex items-center gap-3 mt-4"
-                >
-                  {loading ? <Loader2 className="animate-spin" /> : <><Sparkles size={18} /> {isLogin ? 'EFETUAR LOGIN' : 'CRIAR CONTA'}</>}
-                </Button>
+                <div className="flex flex-col gap-2 mt-4">
+                  <p className="text-[9px] text-center text-muted-foreground font-medium uppercase tracking-tight px-4 leading-relaxed opacity-60">
+                    Ao confirmar, essas informações serão usadas para seus próximos acessos. 🐷🔒
+                  </p>
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-15 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black text-sm uppercase tracking-widest shadow-2xl shadow-green-600/30 active:scale-95 transition-all flex items-center gap-3"
+                  >
+                    {loading ? <Loader2 className="animate-spin" /> : <><Sparkles size={18} /> {isLogin ? 'CONFIRMAR E ENTRAR' : 'CRIAR MINHA CONTA'}</>}
+                  </Button>
+                </div>
               </form>
             </Form>
 

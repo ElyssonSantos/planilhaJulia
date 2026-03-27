@@ -42,10 +42,10 @@ export default function AuthPage() {
           password: values.password,
         });
         if (error) throw error;
-        
+
         if (data.user) {
           setUser({ id: data.user.id, email: data.user.email || '' });
-          toast.success('Boaaaa! Já tamo dentro. 🐷🚀');
+          toast.success('Seja bem-vinda(o) ao Julia Bank! 🐷🚀');
           router.replace('/'); // Use replace para evitar o loop
         }
       } else {
@@ -60,9 +60,9 @@ export default function AuthPage() {
           }
         });
         if (error) throw error;
-        
+
         if (data.user) {
-          toast.success('Conta criada! Dá uma olhada no seu e-mail pra confirmar. 📧');
+          toast.success('Conta criada! Dê uma olhada no seu e-mail para liberar o login. 📧');
           setIsLogin(true);
         }
       }
@@ -82,7 +82,7 @@ export default function AuthPage() {
       <div className="w-full max-w-sm space-y-8 relative z-10 animate-in fade-in zoom-in-95 duration-500">
         <div className="flex flex-col items-center text-center space-y-4">
           <div className="w-20 h-20 bg-green-600 rounded-[30px] flex items-center justify-center text-white shadow-2xl shadow-green-600/40 transform -rotate-12 mb-2">
-             <PiggyBank size={48} />
+            <PiggyBank size={48} />
           </div>
           <h1 className="text-4xl font-black tracking-tighter text-foreground uppercase">JULIA <span className="text-green-600">BANK</span></h1>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">Sua grana, suas regras 🐷💸</p>
@@ -110,10 +110,10 @@ export default function AuthPage() {
                       <FormControl>
                         <div className="relative group">
                           <UserCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-green-600 transition-colors" />
-                          <Input 
-                            placeholder="Ex: @julia_financeira" 
-                            className="bg-background/50 h-14 pl-12 rounded-2xl border-accent/10 text-xs font-bold focus:ring-green-600 shadow-inner" 
-                            {...field} 
+                          <Input
+                            placeholder="Ex: @julia_financeira"
+                            className="bg-background/50 h-14 pl-12 rounded-2xl border-accent/10 text-xs font-bold focus:ring-green-600 shadow-inner"
+                            {...field}
                           />
                         </div>
                       </FormControl>
@@ -131,10 +131,10 @@ export default function AuthPage() {
                       <FormControl>
                         <div className="relative group">
                           <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-green-600 transition-colors" />
-                          <Input 
-                            placeholder="ex: julia@gmail.com" 
-                            className="bg-background/50 h-14 pl-12 rounded-2xl border-accent/10 text-xs font-bold focus:ring-green-600 shadow-inner" 
-                            {...field} 
+                          <Input
+                            placeholder="ex: julia@gmail.com"
+                            className="bg-background/50 h-14 pl-12 rounded-2xl border-accent/10 text-xs font-bold focus:ring-green-600 shadow-inner"
+                            {...field}
                           />
                         </div>
                       </FormControl>
@@ -152,11 +152,11 @@ export default function AuthPage() {
                       <FormControl>
                         <div className="relative group">
                           <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-green-600 transition-colors" />
-                          <Input 
-                            type="password" 
-                            placeholder="••••••••" 
-                            className="bg-background/50 h-14 pl-12 rounded-2xl border-accent/10 text-xs font-bold focus:ring-green-600 shadow-inner" 
-                            {...field} 
+                          <Input
+                            type="password"
+                            placeholder="••••••••"
+                            className="bg-background/50 h-14 pl-12 rounded-2xl border-accent/10 text-xs font-bold focus:ring-green-600 shadow-inner"
+                            {...field}
                           />
                         </div>
                       </FormControl>
@@ -165,31 +165,31 @@ export default function AuthPage() {
                   )}
                 />
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={loading}
                   className="w-full h-15 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black text-sm uppercase tracking-widest shadow-2xl shadow-green-600/30 active:scale-95 transition-all flex items-center gap-3 mt-4"
                 >
-                  {loading ? <Loader2 className="animate-spin" /> : <><Sparkles size={18} /> {isLogin ? 'ENTRAR AGORA' : 'CRIAR CONTA'}</>}
+                  {loading ? <Loader2 className="animate-spin" /> : <><Sparkles size={18} /> {isLogin ? 'EFETUAR LOGIN' : 'CRIAR CONTA'}</>}
                 </Button>
               </form>
             </Form>
 
             <div className="mt-8 text-center">
-              <button 
+              <button
                 onClick={() => setIsLogin(!isLogin)}
                 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-green-600 transition-colors flex items-center justify-center gap-2 mx-auto"
               >
                 {isLogin ? "Ainda não tem conta?" : "Já tem cadastro?"}
-                <span className="text-green-600">{isLogin ? "Cria agora!" : "Vem logar!"}</span>
+                <span className="text-green-600">{isLogin ? "Cria agora!" : "Efetua login!"}</span>
                 <ArrowRight size={12} />
               </button>
             </div>
           </CardContent>
         </Card>
-        
+
         <p className="text-[10px] text-center text-muted-foreground/30 font-bold uppercase tracking-tight px-10 leading-relaxed">
-           Protegido por quem entende de você. &copy; 2026 Julia Bank 🏦🐷
+          Protegido por quem entende de você. &copy; 2026 Julia Bank
         </p>
       </div>
     </div>

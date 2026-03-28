@@ -239,14 +239,14 @@ export default function SettingsPage() {
       </Card>
 
       {/* Sair da Conta */}
-      <div className="px-2">
+      <div className="px-2 pt-4">
         <Button
           onClick={handleLogout}
           variant="ghost"
-          className="w-full h-14 rounded-2xl border border-red-500/10 text-red-500 hover:bg-red-500 hover:text-white font-black text-[12px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 active:scale-95"
+          className="w-full text-muted-foreground hover:bg-transparent hover:text-red-500 font-bold text-[11px] uppercase tracking-widest transition-all flex items-center justify-center gap-2"
         >
-          <LogOut size={20} />
-          Sair do Julia Bank
+          <LogOut size={16} />
+          Desconectar
         </Button>
       </div>
 

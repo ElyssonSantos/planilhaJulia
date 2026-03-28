@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
+import { supabase } from '@/lib/supabase';
 
 export interface Category {
   id: string;
@@ -53,6 +54,40 @@ interface FinanceStore {
   clearAll: () => void;
 }
 
+const syncStorage: StateStorage = {
+  getItem: (name) => {
+    return localStorage.getItem(name);
+  },
+  setItem: (name, value) => {
+    localStorage.setItem(name, value);
+    
+    // Tentar sincronizar em background para a conta logada
+    // Usar timeout para não travar a UI em caso de rede lenta ou falha
+    setTimeout(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const stateData = JSON.parse(value);
+          await supabase.from('profiles').update({ app_state: stateData }).eq('id', session.user.id);
+        }
+      } catch (err) {
+        console.error('Falha ao sincronizar estado com Supabase', err);
+      }
+    }, 100);
+  },
+  removeItem: (name) => {
+    localStorage.removeItem(name);
+    setTimeout(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await supabase.from('profiles').update({ app_state: null }).eq('id', session.user.id);
+        }
+      } catch (err) {}
+    }, 100);
+  },
+};
+
 export const useFinanceStore = create<FinanceStore>()(
   persist(
     (set) => ({
@@ -86,7 +121,7 @@ export const useFinanceStore = create<FinanceStore>()(
     }),
     {
       name: 'finance-storage',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => syncStorage),
     }
   )
 );

@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PiggyBank, Lock, Mail, Loader2, ArrowRight, Sparkles, UserCircle } from 'lucide-react';
+import { PiggyBank, Lock, Mail, Loader2, ArrowRight, Sparkles, UserCircle, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFinanceStore } from '@/stores/financeStore';
 import { translateError } from '@/lib/translate-errors';
@@ -24,13 +24,51 @@ const authSchema = z.object({
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const router = useRouter();
   const setUser = useFinanceStore((state) => state.setUser);
 
   const form = useForm<z.infer<typeof authSchema>>({
     resolver: zodResolver(authSchema),
-    defaultValues: { username: '', email: '', password: '' },
+    defaultValues: { 
+      username: typeof window !== 'undefined' ? localStorage.getItem('julia_bank_remembered_username') || '' : '', 
+      email: '', 
+      password: '' 
+    },
   });
+
+  const handleForgotPassword = async () => {
+    const username = form.getValues('username');
+    if (!username) {
+      toast.error('Digite seu Nome de Usuário primeiro para recuperar a senha! 👤');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('username', username)
+        .maybeSingle();
+
+      if (profileError || !profile?.email) {
+        throw new Error('Usuário não encontrado ou sem e-mail cadastrado! 🤷‍♀️');
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
+        redirectTo: `${window.location.origin}/auth/reset`,
+      });
+      
+      if (error) throw error;
+      toast.success('E-mail de recuperação enviado! Dá uma olhada lá na sua caixa de entrada. 📧📩');
+    } catch (error: any) {
+      toast.error(translateError(error));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAuth = async (values: z.infer<typeof authSchema>) => {
     setLoading(true);
@@ -39,7 +77,7 @@ export default function AuthPage() {
         // Buscar o email associado ao username no perfil
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('email')
+          .select('email, app_state')
           .eq('username', values.username)
           .maybeSingle();
 
@@ -53,9 +91,22 @@ export default function AuthPage() {
         if (error) throw error;
 
         if (data.user) {
+          if (rememberMe) {
+            localStorage.setItem('julia_bank_remembered_username', values.username);
+          } else {
+            localStorage.removeItem('julia_bank_remembered_username');
+          }
+          
+          // Restaurar o banco de dados da nuvem para o dispositivo atual
+          if (profile?.app_state) {
+            localStorage.setItem('finance-storage', typeof profile.app_state === 'string' ? profile.app_state : JSON.stringify(profile.app_state));
+          }
+
           setUser({ id: data.user.id, email: data.user.email || '' });
           toast.success('Seja bem-vinda(o) ao Julia Bank! 🐷🚀');
-          router.replace('/');
+          
+          // Forçar reload na tela home para hidratar o Zustand atualizado
+          window.location.href = '/';
         }
       } else {
         if (!values.email) {
@@ -159,7 +210,7 @@ export default function AuthPage() {
                   />
                 )}
 
-                <FormField
+                  <FormField
                   control={form.control}
                   name="password"
                   render={({ field }) => (
@@ -169,17 +220,45 @@ export default function AuthPage() {
                         <div className="relative group">
                           <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-green-600 transition-colors" />
                           <Input
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
-                            className="bg-background/50 h-14 pl-12 rounded-2xl border-accent/10 text-xs font-bold focus:ring-green-600 shadow-inner"
+                            className="bg-background/50 h-14 pl-12 pr-12 rounded-2xl border-accent/10 text-xs font-bold focus:ring-green-600 shadow-inner"
                             {...field}
                           />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-green-600 transition-colors"
+                          >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
                         </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {isLogin && (
+                  <div className="flex items-center justify-between mt-2">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="w-4 h-4 rounded appearance-none border-2 border-accent/20 checked:bg-green-600 checked:border-green-600 transition-colors relative after:content-['✓'] after:absolute after:text-white after:text-[10px] after:font-black after:top-[50%] after:left-[50%] after:-translate-x-1/2 after:-translate-y-1/2 after:opacity-0 checked:after:opacity-100" 
+                      />
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground group-hover:text-foreground transition-colors">Lembrar de mim</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleForgotPassword}
+                      className="text-[10px] font-bold uppercase text-green-600 hover:text-green-700 hover:underline transition-all"
+                    >
+                      Esqueci a senha
+                    </button>
+                  </div>
+                )}
 
                 <div className="flex flex-col gap-2 mt-4">
                   <p className="text-[9px] text-center text-muted-foreground font-medium uppercase tracking-tight px-4 leading-relaxed opacity-60">

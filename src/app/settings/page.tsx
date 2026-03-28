@@ -71,6 +71,38 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      <Card className="glass border-accent/10 rounded-3xl overflow-hidden shadow-lg border-l-4 border-l-blue-600">
+        <CardHeader className="pb-4 px-6 pt-6">
+          <CardTitle className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
+            <TrendingUp size={14} className="text-blue-600" />
+            Modelo do Gráfico
+          </CardTitle>
+          <CardDescription className="text-[9px] font-medium uppercase opacity-50 tracking-tighter">Escolha entre Pilastras ou Estilo Ações</CardDescription>
+        </CardHeader>
+        <CardContent className="px-6 pb-6">
+          <div className="flex gap-2 p-1.5 bg-muted/60 backdrop-blur rounded-2xl border border-accent/5">
+            {[
+              { id: 'bar', label: 'Pilastras', icon: BarChart3 },
+              { id: 'area', label: 'Financeiro', icon: AreaChartIcon },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setChartType(t.id as 'bar' | 'area')}
+                className={cn(
+                  "flex-1 flex flex-col items-center gap-2 p-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+                  chartType === t.id
+                    ? "bg-background text-blue-600 shadow-xl shadow-black/5"
+                    : "text-muted-foreground/30 hover:bg-background/40 hover:text-muted-foreground"
+                )}
+              >
+                <t.icon size={18} className={cn(chartType === t.id ? "animate-in zoom-in-75 duration-300" : "")} />
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* NOVO: Limite de Gastos (Teto Mensal) 🛡️ */}
       <Card className="glass border-accent/10 rounded-3xl overflow-hidden shadow-lg border-l-4 border-l-yellow-500">
         <CardHeader className="pb-4 px-6 pt-6">
@@ -173,38 +205,6 @@ export default function SettingsPage() {
                   <Trash2 size={12} />
                 </button>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="glass border-accent/10 rounded-3xl overflow-hidden shadow-lg border-l-4 border-l-blue-600">
-        <CardHeader className="pb-4 px-6 pt-6">
-          <CardTitle className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
-            <TrendingUp size={14} className="text-blue-600" />
-            Estilo do Gráfico
-          </CardTitle>
-          <CardDescription className="text-[9px] font-medium uppercase opacity-50 tracking-tighter">Como você prefere ver seus dados?</CardDescription>
-        </CardHeader>
-        <CardContent className="px-6 pb-6">
-          <div className="flex gap-2 p-1.5 bg-muted/60 backdrop-blur rounded-2xl border border-accent/5">
-            {[
-              { id: 'bar', label: 'Pilastras', icon: BarChart3 },
-              { id: 'area', label: 'Financeiro', icon: AreaChartIcon },
-            ].map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setChartType(t.id as 'bar' | 'area')}
-                className={cn(
-                  "flex-1 flex flex-col items-center gap-2 p-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300",
-                  chartType === t.id
-                    ? "bg-background text-blue-600 shadow-xl shadow-black/5"
-                    : "text-muted-foreground/30 hover:bg-background/40 hover:text-muted-foreground"
-                )}
-              >
-                <t.icon size={18} className={cn(chartType === t.id ? "animate-in zoom-in-75 duration-300" : "")} />
-                {t.label}
-              </button>
             ))}
           </div>
         </CardContent>

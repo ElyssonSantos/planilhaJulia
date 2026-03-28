@@ -57,7 +57,7 @@ export const useFinanceStore = create<FinanceStore>()(
   persist(
     (set) => ({
       user: null,
-      transactions: [],
+      transactions: [], // Transações salvas
       categories: DEFAULT_CATEGORIES,
       monthlyLimit: 0,
       piggyBank: null,

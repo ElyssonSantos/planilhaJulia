@@ -40,6 +40,7 @@ interface FinanceStore {
   categories: Category[];
   monthlyLimit: number;
   piggyBank: PiggyBank | null;
+  chartType: 'bar' | 'area';
   setUser: (user: { id: string; email: string } | null) => void;
   addTransaction: (transaction: Transaction) => void;
   removeTransaction: (id: string) => void;
@@ -48,6 +49,7 @@ interface FinanceStore {
   setMonthlyLimit: (limit: number) => void;
   setPiggyBank: (piggyBank: PiggyBank | null) => void;
   updatePiggyBank: (amount: number) => void;
+  setChartType: (type: 'bar' | 'area') => void;
   clearAll: () => void;
 }
 
@@ -59,6 +61,7 @@ export const useFinanceStore = create<FinanceStore>()(
       categories: DEFAULT_CATEGORIES,
       monthlyLimit: 0,
       piggyBank: null,
+      chartType: 'bar',
       setUser: (user) => set({ user }),
       addTransaction: (transaction) =>
         set((state) => ({ transactions: [transaction, ...state.transactions] })),
@@ -78,7 +81,8 @@ export const useFinanceStore = create<FinanceStore>()(
         set((state) => ({
           piggyBank: state.piggyBank ? { ...state.piggyBank, current_amount: amount } : null,
         })),
-      clearAll: () => set({ transactions: [], piggyBank: null, user: null, categories: DEFAULT_CATEGORIES, monthlyLimit: 0 }),
+      setChartType: (chartType) => set({ chartType }),
+      clearAll: () => set({ transactions: [], piggyBank: null, user: null, categories: DEFAULT_CATEGORIES, monthlyLimit: 0, chartType: 'bar' }),
     }),
     {
       name: 'finance-storage',

@@ -36,12 +36,14 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  Cell
+  Cell,
+  AreaChart,
+  Area
 } from 'recharts';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
-  const { transactions, monthlyLimit } = useFinanceStore();
+  const { transactions, monthlyLimit, chartType } = useFinanceStore();
   const [showNotifications, setShowNotifications] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -212,20 +214,57 @@ export default function Dashboard() {
          <CardContent className="h-[240px] w-full mt-4">
             {transactions.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 0, right: 30, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
-                  <Tooltip 
-                    cursor={{ fill: 'rgba(0,0,0,0.02)' }} 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', fontSize: '11px', fontWeight: 'bold' }} 
-                  />
-                  <Bar dataKey="valor" radius={[14, 14, 4, 4]} barSize={60}>
-                    {chartData.map((entry, index) => (
-                      <Cell key={index} fill={entry.fill} fillOpacity={0.9} />
-                    ))}
-                  </Bar>
-                </BarChart>
+                {chartType === 'bar' ? (
+                  <BarChart data={chartData} margin={{ top: 0, right: 30, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
+                    <Tooltip 
+                      cursor={{ fill: 'rgba(0,0,0,0.02)' }} 
+                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', fontSize: '11px', fontWeight: 'bold' }} 
+                    />
+                    <Bar dataKey="valor" radius={[14, 14, 4, 4]} barSize={60}>
+                      {chartData.map((entry, index) => (
+                        <Cell key={index} fill={entry.fill} fillOpacity={0.9} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                ) : (
+                  <AreaChart 
+                    data={[
+                      { name: 'Início', valor: 0 },
+                      ...transactions.slice().reverse().reduce((acc: any[], t) => {
+                        const lastValue = acc.length > 0 ? acc[acc.length - 1].valor : 0;
+                        const newValue = lastValue + (t.type === 'expense' ? -t.amount : t.amount);
+                        acc.push({ name: format(new Date(t.date), 'dd/MM'), valor: newValue });
+                        return acc;
+                      }, [])
+                    ]} 
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 800 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700 }} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', fontSize: '10px', fontWeight: 'bold' }} 
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="valor" 
+                      stroke="#16a34a" 
+                      strokeWidth={3}
+                      fillOpacity={1} 
+                      fill="url(#colorVal)" 
+                      animationDuration={1500}
+                    />
+                  </AreaChart>
+                )}
               </ResponsiveContainer>
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center space-y-3 opacity-20">

@@ -4,13 +4,13 @@ import { useFinanceStore } from '@/stores/financeStore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart as BarChartIcon, PieChart as PieChartIcon, Target, TrendingUp, CalendarDays, ChevronRight, Activity, TrendingDown } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, PieChart, Pie, Cell, YAxis } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, PieChart, Pie, Cell, YAxis, AreaChart, Area } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
 
 export default function ReportsPage() {
-  const { transactions } = useFinanceStore();
+  const { transactions, chartType } = useFinanceStore();
 
   const totalIncome = transactions.filter(t => t.type.includes('income')).reduce((a, b) => a + b.amount, 0);
   const totalExpense = transactions.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
@@ -87,17 +87,40 @@ export default function ReportsPage() {
             <CardContent className="h-64 px-2 pb-6">
               {monthlyData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyData} margin={{ top: 20, right: 0, left: -25, bottom: 0 }}>
-                    <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} tick={{fill: '#888', fontWeight: 600}} />
-                    <YAxis fontSize={10} tickLine={false} axisLine={false} tick={{fill: '#888'}} tickFormatter={(v) => `R$${v}`} />
-                    <Tooltip 
-                      cursor={{ fill: 'rgba(0,0,0,0.03)' }} 
-                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', fontSize: '11px', fontWeight: 'bold' }} 
-                      formatter={(v: any) => [new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v), '']}
-                    />
-                    <Bar dataKey="income" fill="#16a34a" radius={[4, 4, 0, 0]} maxBarSize={30} />
-                    <Bar dataKey="expense" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={30} />
-                  </BarChart>
+                  {chartType === 'bar' ? (
+                    <BarChart data={monthlyData} margin={{ top: 20, right: 0, left: -25, bottom: 0 }}>
+                      <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} tick={{fill: '#888', fontWeight: 600}} />
+                      <YAxis fontSize={10} tickLine={false} axisLine={false} tick={{fill: '#888'}} tickFormatter={(v) => `R$${v}`} />
+                      <Tooltip 
+                        cursor={{ fill: 'rgba(0,0,0,0.03)' }} 
+                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', fontSize: '11px', fontWeight: 'bold' }} 
+                        formatter={(v: any) => [new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v), '']}
+                      />
+                      <Bar dataKey="income" fill="#16a34a" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                      <Bar dataKey="expense" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                    </BarChart>
+                  ) : (
+                    <AreaChart data={monthlyData} margin={{ top: 20, right: 10, left: -25, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorInc" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} tick={{fill: '#888', fontWeight: 600}} />
+                      <YAxis fontSize={10} tickLine={false} axisLine={false} tick={{fill: '#888'}} tickFormatter={(v) => `R$${v}`} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', fontSize: '11px', fontWeight: 'bold' }} 
+                        formatter={(v: any) => [new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v), '']}
+                      />
+                      <Area type="monotone" dataKey="income" stroke="#16a34a" strokeWidth={3} fillOpacity={1} fill="url(#colorInc)" />
+                      <Area type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorExp)" />
+                    </AreaChart>
+                  )}
                 </ResponsiveContainer>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/30 space-y-2">

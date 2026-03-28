@@ -44,6 +44,7 @@ import { toast } from 'sonner';
 
 export default function Dashboard() {
   const { transactions, monthlyLimit, chartType } = useFinanceStore();
+  const user = useFinanceStore((state) => state.user);
   const [showNotifications, setShowNotifications] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -58,7 +59,7 @@ export default function Dashboard() {
          <div className="w-16 h-16 bg-green-600 rounded-[24px] flex items-center justify-center text-white shadow-2xl animate-bounce">
             <PiggyBank size={32} />
          </div>
-         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-green-600 animate-pulse">Carregando Banco da Julia...</p>
+         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-green-600 animate-pulse">Carregando Seu Banco...</p>
       </div>
     );
   }
@@ -84,9 +85,9 @@ export default function Dashboard() {
   const recentTransactions = transactions.slice(0, 5);
 
   const notifications = [
-    { id: '1', title: 'Boas-vindas Julia!', text: 'Seu Banco Exclusivo está pronto para economizar.', icon: Sparkles, color: 'text-green-600' },
-    ...(isOverLimit ? [{ id: '2', title: 'Limite Excedido!', text: 'Julia, você passou do teto planejado para o mês 😱', icon: AlertTriangle, color: 'text-red-500' }] : []),
-    ...(balance > 500 ? [{ id: '3', title: 'Uau, Julia!', text: 'Sua conta está super saudável hoje! 💰', icon: CheckCircle2, color: 'text-green-600' }] : []),
+    { id: '1', title: `Boas-vindas ${user?.username || 'Usuário'}!`, text: 'Seu Banco Exclusivo está pronto para economizar.', icon: Sparkles, color: 'text-green-600' },
+    ...(isOverLimit ? [{ id: '2', title: 'Limite Excedido!', text: `${user?.username || 'Usuário'}, você passou do teto planejado para o mês 😱`, icon: AlertTriangle, color: 'text-red-500' }] : []),
+    ...(balance > 500 ? [{ id: '3', title: `Uau, ${user?.username || 'Usuário'}!`, text: 'Sua conta está super saudável hoje! 💰', icon: CheckCircle2, color: 'text-green-600' }] : []),
     ...(transactions.length > 0 ? [{ id: '4', title: 'Lançamento Master', text: `Último registro: ${transactions[0].description || transactions[0].category}`, icon: Info, color: 'text-blue-500' }] : []),
   ];
 
@@ -98,10 +99,10 @@ export default function Dashboard() {
            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-600 to-green-700 shadow-xl shadow-green-600/30 flex items-center justify-center text-white ring-4 ring-background">
              <ShieldCheck size={28} />
            </div>
-           <div>
-             <h1 className="text-xl font-black text-foreground tracking-tight">Julia <span className="text-green-600">Bank</span></h1>
-             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-50">Sua grana, suas regras 🐷💸</p>
-           </div>
+           <div className="flex flex-col">
+          <h2 className="text-xl font-black uppercase tracking-tighter text-foreground leading-none">Oi, {user?.username || 'Usuária'}!</h2>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground opacity-50">Confira sua grana hoje 🐷📈</p>
+        </div>
         </div>
         <div className="relative">
            <button 

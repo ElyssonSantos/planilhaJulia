@@ -199,7 +199,7 @@ export default function AddTransactionPage() {
         </Button>
 
         <p className="text-[9px] text-center text-muted-foreground/40 font-bold uppercase tracking-widest leading-relaxed px-4">
-           Esta ação atualizará seu saldo e gráficos automaticamente no Julia Bank.
+           Esta ação atualizará seu saldo e gráficos automaticamente no App.
         </p>
       </div>
     </div>

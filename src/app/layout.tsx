@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Julia Financial | Dashboard",
-  description: "Gerenciamento financeiro pessoal da Julia",
+  description: "Seu gerenciamento financeiro pessoal",
 };
 
 export const viewport: Viewport = {

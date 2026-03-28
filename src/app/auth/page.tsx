@@ -17,7 +17,7 @@ import { translateError } from '@/lib/translate-errors';
 
 const authSchema = z.object({
   username: z.string().min(3, 'Seu login precisa de pelo menos 3 letras! 👤'),
-  email: z.string().email('E-mail inválido, mano! 📧').optional().or(z.literal('')),
+  email: z.string().email('E-mail inválido! 📧').optional().or(z.literal('')),
   password: z.string().min(6, 'A senha deve ter pelo menos 6 letras! 🔐'),
 });
 
@@ -31,10 +31,10 @@ export default function AuthPage() {
 
   const form = useForm<z.infer<typeof authSchema>>({
     resolver: zodResolver(authSchema),
-    defaultValues: { 
-      username: typeof window !== 'undefined' ? localStorage.getItem('julia_bank_remembered_username') || '' : '', 
-      email: '', 
-      password: '' 
+    defaultValues: {
+      username: typeof window !== 'undefined' ? localStorage.getItem('julia_bank_remembered_username') || '' : '',
+      email: '',
+      password: ''
     },
   });
 
@@ -44,7 +44,7 @@ export default function AuthPage() {
       toast.error('Digite seu Nome de Usuário primeiro para recuperar a senha! 👤');
       return;
     }
-    
+
     setLoading(true);
     try {
       const { data: profile, error: profileError } = await supabase
@@ -54,15 +54,15 @@ export default function AuthPage() {
         .maybeSingle();
 
       if (profileError || !profile?.email) {
-        throw new Error('Usuário não encontrado ou sem e-mail cadastrado! 🤷‍♀️');
+        throw new Error('Usuário não encontrado ou sem e-mail cadastrado!');
       }
 
       const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
         redirectTo: `${window.location.origin}/auth/reset`,
       });
-      
+
       if (error) throw error;
-      toast.success('E-mail de recuperação enviado! Dá uma olhada lá na sua caixa de entrada. 📧📩');
+      toast.success('E-mail de recuperação enviado! Dá uma olhada lá na sua caixa de entrada. 📩');
     } catch (error: any) {
       toast.error(translateError(error));
     } finally {
@@ -77,7 +77,7 @@ export default function AuthPage() {
         // Buscar o email associado ao username no perfil
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('email, app_state')
+          .select('email, username, app_state')
           .eq('username', values.username)
           .maybeSingle();
 
@@ -96,12 +96,12 @@ export default function AuthPage() {
           } else {
             localStorage.removeItem('julia_bank_remembered_username');
           }
-          
+
           // --- LOGICA DE MESCLAR / RESTAURAR ---
           // Pegar o que já existe no PC (antes do login)
           const localStored = localStorage.getItem('finance-storage');
           let localState = localStored ? JSON.parse(localStored) : null;
-          
+
           // Pegar o que está na nuvem
           let cloudState = profile?.app_state;
           if (typeof cloudState === 'string') cloudState = JSON.parse(cloudState);
@@ -110,7 +110,7 @@ export default function AuthPage() {
           if (localState && cloudState) {
             const localTransactions = localState.state?.transactions || [];
             const cloudTransactions = cloudState.state?.transactions || [];
-            
+
             // Unir e remover duplicatas pelo ID
             const allTransactions = [...localTransactions];
             cloudTransactions.forEach((ct: any) => {
@@ -118,19 +118,23 @@ export default function AuthPage() {
                 allTransactions.push(ct);
               }
             });
-            
+
             // O estado final será o da nuvem, mas com as transações mescladas
             cloudState.state.transactions = allTransactions;
           }
 
           // Se a nuvem tem qualquer dado (ou mesclado), salvar no PC
           if (cloudState) {
-             localStorage.setItem('finance-storage', JSON.stringify(cloudState));
+            localStorage.setItem('finance-storage', JSON.stringify(cloudState));
           }
 
-          setUser({ id: data.user.id, email: data.user.email || '' });
-          toast.success('Seja bem-vinda(o) ao Julia Bank! 🐷🚀');
-          
+          setUser({
+            id: data.user.id,
+            email: data.user.email || '',
+            username: profile?.username || values.username
+          });
+          toast.success(`Seja bem-vinda(o) ao Julia Bank, ${profile?.username || values.username}! 🐷🚀`);
+
           // Forçar reload na tela home para hidratar o Zustand com o banco mesclado
           setTimeout(() => {
             window.location.href = '/';
@@ -184,7 +188,7 @@ export default function AuthPage() {
         <Card className="glass border-accent/10 rounded-[40px] overflow-hidden shadow-2xl transition-all">
           <CardHeader className="pt-8 pb-4 text-center">
             <CardTitle className="text-xl font-black uppercase tracking-tight">
-              {isLogin ? 'BEM-VINDA DE VOLTA!' : 'VEM POUPAR COM A GENTE'}
+              {isLogin ? 'BEM-VINDA(O) DE VOLTA!' : 'VEM POUPAR COM A GENTE'}
             </CardTitle>
             <CardDescription className="text-[10px] font-bold uppercase opacity-40">
               {isLogin ? 'Coloque seus dados pra entrar' : 'Preencha os dados abaixo e bora'}
@@ -238,7 +242,7 @@ export default function AuthPage() {
                   />
                 )}
 
-                  <FormField
+                <FormField
                   control={form.control}
                   name="password"
                   render={({ field }) => (
@@ -270,11 +274,11 @@ export default function AuthPage() {
                 {isLogin && (
                   <div className="flex items-center justify-between mt-2">
                     <label className="flex items-center gap-2 cursor-pointer group">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={rememberMe}
                         onChange={(e) => setRememberMe(e.target.checked)}
-                        className="w-4 h-4 rounded appearance-none border-2 border-accent/20 checked:bg-green-600 checked:border-green-600 transition-colors relative after:content-['✓'] after:absolute after:text-white after:text-[10px] after:font-black after:top-[50%] after:left-[50%] after:-translate-x-1/2 after:-translate-y-1/2 after:opacity-0 checked:after:opacity-100" 
+                        className="w-4 h-4 rounded appearance-none border-2 border-accent/20 checked:bg-green-600 checked:border-green-600 transition-colors relative after:content-['✓'] after:absolute after:text-white after:text-[10px] after:font-black after:top-[50%] after:left-[50%] after:-translate-x-1/2 after:-translate-y-1/2 after:opacity-0 checked:after:opacity-100"
                       />
                       <span className="text-[10px] uppercase font-bold text-muted-foreground group-hover:text-foreground transition-colors">Lembrar de mim</span>
                     </label>

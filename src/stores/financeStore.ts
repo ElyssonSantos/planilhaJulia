@@ -36,13 +36,13 @@ const DEFAULT_CATEGORIES: Category[] = [
 ];
 
 interface FinanceStore {
-  user: { id: string; email: string } | null;
+  user: { id: string; email: string; username?: string } | null;
   transactions: Transaction[];
   categories: Category[];
   monthlyLimit: number;
   piggyBank: PiggyBank | null;
   chartType: 'bar' | 'area';
-  setUser: (user: { id: string; email: string } | null) => void;
+  setUser: (user: { id: string; email: string; username?: string } | null) => void;
   addTransaction: (transaction: Transaction) => void;
   removeTransaction: (id: string) => void;
   addCategory: (category: Category) => void;

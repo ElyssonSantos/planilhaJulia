@@ -23,7 +23,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 export default function SavingsPage() {
-  const { piggyBank, setPiggyBank, updatePiggyBank } = useFinanceStore();
+  const { piggyBank, setPiggyBank, updatePiggyBank, user } = useFinanceStore();
   const router = useRouter();
 
   const [isCreating, setIsCreating] = useState(false);
@@ -90,7 +90,7 @@ export default function SavingsPage() {
                  <div className="w-10 h-10 bg-green-600/10 rounded-xl flex items-center justify-center text-green-600 shadow-inner">
                     <Sparkles size={20} />
                  </div>
-                 <h2 className="text-xl font-black uppercase tracking-tighter">Novo Sonho Julia</h2>
+                 <h2 className="text-xl font-black uppercase tracking-tighter">Novo Sonho de {user?.username || 'Usuária'}</h2>
               </div>
               <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 leading-relaxed">Planeje seu próximo passo financeiro</p>
            </CardHeader>
@@ -237,7 +237,7 @@ export default function SavingsPage() {
            <div className="p-4 bg-green-600/5 rounded-2xl border border-green-600/10 flex items-start gap-3">
               <Zap size={18} className="text-green-600 shrink-0 mt-0.5" />
               <p className="text-[11px] font-bold text-muted-foreground leading-snug uppercase tracking-tight">
-                Sabia Julia? Se você guardar R$ 50,00 toda semana, sua meta "{piggyBank.name}" será atingida muito mais rápido! 🐷🚀
+                Sabia {user?.username || 'Usuária'}? Se você guardar R$ 50,00 toda semana, sua meta "{piggyBank.name}" será atingida muito mais rápido! 🐷🚀
               </p>
            </div>
         </div>

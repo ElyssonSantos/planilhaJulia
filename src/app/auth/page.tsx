@@ -294,7 +294,7 @@ export default function AuthPage() {
 
                 <div className="flex flex-col gap-2 mt-4">
                   <p className="text-[9px] text-center text-muted-foreground font-medium uppercase tracking-tight px-4 leading-relaxed opacity-60">
-                    Ao confirmar, essas informações serão usadas para seus próximos acessos. 🐷🔒
+                    Ao confirmar, essas informações serão usadas para seus próximos acessos.
                   </p>
                   <Button
                     type="submit"

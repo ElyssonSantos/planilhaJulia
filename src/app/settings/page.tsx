@@ -103,6 +103,46 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Sincronização em Nuvem ☁️ */}
+      <Card className="glass border-accent/10 rounded-3xl overflow-hidden shadow-lg border-l-4 border-l-purple-600">
+        <CardHeader className="pb-4 px-6 pt-6 flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
+              <Database size={14} className="text-purple-600" />
+              Sincronismo em Nuvem
+            </CardTitle>
+            <CardDescription className="text-[9px] font-medium uppercase opacity-50 tracking-tighter">Salve seus dados na sua conta Julia Bank</CardDescription>
+          </div>
+          <Button
+            onClick={async () => {
+              const loadingToast = toast.loading('Sincronizando com a nuvem... 🐷☁️');
+              try {
+                // Forçar o sync rodando o setItem do store manualmente
+                const storeData = localStorage.getItem('finance-storage');
+                if (storeData) {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (session?.user) {
+                     await supabase.from('profiles').update({ app_state: JSON.parse(storeData) }).eq('id', session.user.id);
+                     toast.dismiss(loadingToast);
+                     toast.success('Dados salvos na nuvem com sucesso! 🐷🚀');
+                  } else {
+                    toast.dismiss(loadingToast);
+                    toast.error('Você precisa estar logada para sincronizar! 👤');
+                  }
+                }
+              } catch (err) {
+                toast.dismiss(loadingToast);
+                toast.error('Erro ao sincronizar. Tente novamente! ❌');
+              }
+            }}
+            variant="outline"
+            className="h-10 rounded-xl border-purple-500/20 text-purple-600 font-bold text-[10px] uppercase px-4 hover:bg-purple-500/5 transition-all"
+          >
+            Sincronizar Agora
+          </Button>
+        </CardHeader>
+      </Card>
+
       {/* NOVO: Limite de Gastos (Teto Mensal) 🛡️ */}
       <Card className="glass border-accent/10 rounded-3xl overflow-hidden shadow-lg border-l-4 border-l-yellow-500">
         <CardHeader className="pb-4 px-6 pt-6">

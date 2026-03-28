@@ -97,16 +97,44 @@ export default function AuthPage() {
             localStorage.removeItem('julia_bank_remembered_username');
           }
           
-          // Restaurar o banco de dados da nuvem para o dispositivo atual
-          if (profile?.app_state) {
-            localStorage.setItem('finance-storage', typeof profile.app_state === 'string' ? profile.app_state : JSON.stringify(profile.app_state));
+          // --- LOGICA DE MESCLAR / RESTAURAR ---
+          // Pegar o que já existe no PC (antes do login)
+          const localStored = localStorage.getItem('finance-storage');
+          let localState = localStored ? JSON.parse(localStored) : null;
+          
+          // Pegar o que está na nuvem
+          let cloudState = profile?.app_state;
+          if (typeof cloudState === 'string') cloudState = JSON.parse(cloudState);
+
+          // Se ambos existem, mesclar transações (IDs únicos evitam duplicatas)
+          if (localState && cloudState) {
+            const localTransactions = localState.state?.transactions || [];
+            const cloudTransactions = cloudState.state?.transactions || [];
+            
+            // Unir e remover duplicatas pelo ID
+            const allTransactions = [...localTransactions];
+            cloudTransactions.forEach((ct: any) => {
+              if (!allTransactions.find(lt => lt.id === ct.id)) {
+                allTransactions.push(ct);
+              }
+            });
+            
+            // O estado final será o da nuvem, mas com as transações mescladas
+            cloudState.state.transactions = allTransactions;
+          }
+
+          // Se a nuvem tem qualquer dado (ou mesclado), salvar no PC
+          if (cloudState) {
+             localStorage.setItem('finance-storage', JSON.stringify(cloudState));
           }
 
           setUser({ id: data.user.id, email: data.user.email || '' });
           toast.success('Seja bem-vinda(o) ao Julia Bank! 🐷🚀');
           
-          // Forçar reload na tela home para hidratar o Zustand atualizado
-          window.location.href = '/';
+          // Forçar reload na tela home para hidratar o Zustand com o banco mesclado
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 500);
         }
       } else {
         if (!values.email) {

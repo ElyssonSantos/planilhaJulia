@@ -38,5 +38,5 @@ export const translateError = (error: any): string => {
   }
 
   // Se não reconhecer o erro, retorna uma mensagem padrão amigável mas mantendo a essência
-  return 'Aconteceu um erro inesperado! Se persistir, reinicie o app. 🐷❓';
+  return `Erro: ${error?.message || error || 'Aconteceu algo inesperado 🐷❓'}`;
 };

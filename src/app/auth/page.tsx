@@ -14,15 +14,18 @@ import { PiggyBank, Lock, Mail, Loader2, ArrowRight, Sparkles, UserCircle, Eye, 
 import { toast } from 'sonner';
 import { useFinanceStore } from '@/stores/financeStore';
 import { translateError } from '@/lib/translate-errors';
+import { FormDescription } from '@/components/ui/form';
 
 const authSchema = z.object({
   username: z.string().min(3, 'Seu login precisa de pelo menos 3 letras! 👤'),
   email: z.string().email('E-mail inválido! 📧').optional().or(z.literal('')),
   password: z.string().min(6, 'A senha deve ter pelo menos 6 letras! 🔐'),
+  recoveryCode: z.string().min(4, 'O código de recuperação deve ter pelo menos 4 dígitos! 🛡️').optional(),
 });
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const [isRecovering, setIsRecovering] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -34,35 +37,50 @@ export default function AuthPage() {
     defaultValues: {
       username: typeof window !== 'undefined' ? localStorage.getItem('julia_bank_remembered_username') || '' : '',
       email: '',
-      password: ''
+      password: '',
+      recoveryCode: '',
     },
   });
 
-  const handleForgotPassword = async () => {
-    const username = form.getValues('username');
-    if (!username) {
-      toast.error('Digite seu Nome de Usuário primeiro para recuperar a senha! 👤');
+  const handleRecovery = async (values: z.infer<typeof authSchema>) => {
+    if (!values.username || !values.recoveryCode || !values.password) {
+      toast.error('Preencha seu Nome de Usuário, Código e a Nova Senha! 👤🔑');
       return;
     }
 
     setLoading(true);
     try {
+      // 1. Verificar se o usuário existe e se o código de recuperação bate
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('email')
-        .eq('username', username)
+        .select('id, recovery_code')
+        .eq('username', values.username)
         .maybeSingle();
 
-      if (profileError || !profile?.email) {
-        throw new Error('Usuário não encontrado ou sem e-mail cadastrado!');
+      if (profileError || !profile) {
+        throw new Error('Usuário não encontrado! 👤❓');
       }
 
-      const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
-        redirectTo: `${window.location.origin}/auth/reset`,
+      if (profile.recovery_code !== values.recoveryCode) {
+        throw new Error('Código de recuperação incorreto! ❌🤔');
+      }
+
+      // 2. Chamar nossa API interna que usa Service Role para resetar a senha
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: profile.id,
+          newPassword: values.password
+        }),
       });
 
-      if (error) throw error;
-      toast.success('E-mail de recuperação enviado! Dá uma olhada lá na sua caixa de entrada. 📩');
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Erro ao resetar senha');
+
+      toast.success('Senha atualizada com sucesso! Agora você já pode entrar. 🐷🔒');
+      setIsRecovering(false);
+      setIsLogin(true);
     } catch (error: any) {
       toast.error(translateError(error));
     } finally {
@@ -153,13 +171,14 @@ export default function AuthPage() {
           options: {
             data: {
               display_name: values.username,
+              recovery_code: values.recoveryCode,
             }
           }
         });
         if (error) throw error;
 
         if (data.user) {
-          toast.success('Conta criada! Dê uma olhada no seu e-mail para liberar o login. 📧');
+          toast.success('Conta criada com sucesso! Já pode entrar na sua conta. 🐷🚀');
           setIsLogin(true);
         }
       }
@@ -188,15 +207,15 @@ export default function AuthPage() {
         <Card className="glass border-accent/10 rounded-[40px] overflow-hidden shadow-2xl transition-all">
           <CardHeader className="pt-8 pb-4 text-center">
             <CardTitle className="text-xl font-black uppercase tracking-tight">
-              {isLogin ? 'BEM-VINDA(O) DE VOLTA!' : 'VEM POUPAR COM A GENTE'}
+              {isRecovering ? 'RECUPERAR SENHA' : (isLogin ? 'BEM-VINDA(O) DE VOLTA!' : 'VEM POUPAR COM A GENTE')}
             </CardTitle>
             <CardDescription className="text-[10px] font-bold uppercase opacity-40">
-              {isLogin ? 'Coloque seus dados pra entrar' : 'Preencha os dados abaixo e bora'}
+              {isRecovering ? 'Use seu código chave para trocar a senha' : (isLogin ? 'Coloque seus dados pra entrar' : 'Preencha os dados abaixo e bora')}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleAuth)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(isRecovering ? handleRecovery : handleAuth)} className="space-y-4">
                 {/* Campo de Usuário (Sempre visível como você pediu) */}
                 <FormField
                   control={form.control}
@@ -219,7 +238,7 @@ export default function AuthPage() {
                   )}
                 />
 
-                {!isLogin && (
+                {(!isLogin && !isRecovering) && (
                   <FormField
                     control={form.control}
                     name="email"
@@ -242,12 +261,40 @@ export default function AuthPage() {
                   />
                 )}
 
+                {(isRecovering || !isLogin) && (
+                  <FormField
+                    control={form.control}
+                    name="recoveryCode"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest ml-1 text-muted-foreground opacity-60">Código de Recuperação (Chave)</FormLabel>
+                        <FormControl>
+                          <div className="relative group">
+                            <Sparkles className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-green-600 transition-colors" />
+                            <Input
+                              placeholder="Ex: 123456"
+                              className="bg-background/50 h-14 pl-12 rounded-2xl border-accent/10 text-xs font-bold focus:ring-green-600 shadow-inner"
+                              {...field}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormDescription className="text-[9px] uppercase font-bold opacity-50 ml-1">
+                          {isRecovering ? 'Aquele código que você criou no cadastro' : 'Crie um código forte para recuperar sua senha se esquecer'}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
                 <FormField
                   control={form.control}
                   name="password"
                   render={({ field }) => (
                     <FormItem className="space-y-2">
-                      <FormLabel className="text-[10px] font-black uppercase tracking-widest ml-1 text-muted-foreground opacity-60">Sua Senha</FormLabel>
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest ml-1 text-muted-foreground opacity-60">
+                        {isRecovering ? 'Nova Senha' : 'Sua Senha'}
+                      </FormLabel>
                       <FormControl>
                         <div className="relative group">
                           <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-green-600 transition-colors" />
@@ -271,7 +318,7 @@ export default function AuthPage() {
                   )}
                 />
 
-                {isLogin && (
+                {isLogin && !isRecovering && (
                   <div className="flex items-center justify-between mt-2">
                     <label className="flex items-center gap-2 cursor-pointer group">
                       <input
@@ -284,7 +331,7 @@ export default function AuthPage() {
                     </label>
                     <button
                       type="button"
-                      onClick={handleForgotPassword}
+                      onClick={() => setIsRecovering(true)}
                       className="text-[10px] font-bold uppercase text-green-600 hover:text-green-700 hover:underline transition-all"
                     >
                       Esqueci a senha
@@ -301,7 +348,12 @@ export default function AuthPage() {
                     disabled={loading}
                     className="w-full h-15 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black text-sm uppercase tracking-widest shadow-2xl shadow-green-600/30 active:scale-95 transition-all flex items-center gap-3"
                   >
-                    {loading ? <Loader2 className="animate-spin" /> : <><Sparkles size={18} /> {isLogin ? 'CONFIRMAR E ENTRAR' : 'CRIAR MINHA CONTA'}</>}
+                    {loading ? <Loader2 className="animate-spin" /> : (
+                      <>
+                        <Sparkles size={18} /> 
+                        {isRecovering ? 'ATUALIZAR SENHA' : (isLogin ? 'CONFIRMAR E ENTRAR' : 'CRIAR MINHA CONTA')}
+                      </>
+                    )}
                   </Button>
                 </div>
               </form>
@@ -309,11 +361,20 @@ export default function AuthPage() {
 
             <div className="mt-8 text-center">
               <button
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => {
+                  if (isRecovering) {
+                    setIsRecovering(false);
+                    setIsLogin(true);
+                  } else {
+                    setIsLogin(!isLogin);
+                  }
+                }}
                 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-green-600 transition-colors flex items-center justify-center gap-2 mx-auto"
               >
-                {isLogin ? "Ainda não tem conta?" : "Já tem cadastro?"}
-                <span className="text-green-600">{isLogin ? "Cria agora!" : "Efetua login!"}</span>
+                {isRecovering ? "Lembrou a senha?" : (isLogin ? "Ainda não tem conta?" : "Já tem cadastro?")}
+                <span className="text-green-600">
+                  {isRecovering ? "Entrar agora!" : (isLogin ? "Cria agora!" : "Efetua login!")}
+                </span>
                 <ArrowRight size={12} />
               </button>
             </div>

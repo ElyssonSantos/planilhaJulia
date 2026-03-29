@@ -17,7 +17,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
-        setUser({ id: session.user.id, email: session.user.email || '' });
+        setUser({ 
+          id: session.user.id, 
+          email: session.user.email || '', 
+          username: session.user.user_metadata?.display_name || ''
+        });
         if (pathname === '/auth') {
           router.push('/');
         }
@@ -34,7 +38,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        setUser({ id: session.user.id, email: session.user.email || '' });
+        setUser({ 
+          id: session.user.id, 
+          email: session.user.email || '', 
+          username: session.user.user_metadata?.display_name || ''
+        });
       } else {
         setUser(null);
         clearAll(); // Limpar dados locais ao deslogar por segurança

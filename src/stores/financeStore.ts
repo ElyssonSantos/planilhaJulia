@@ -35,6 +35,25 @@ const DEFAULT_CATEGORIES: Category[] = [
   { id: '6', name: 'Salário', icon: '💰', color: '#16a34a' },
 ];
 
+export interface CreditCard {
+  id: string;
+  name: string;
+  type: 'personal' | 'business';
+  closingDay: number;
+  dueDay: number;
+  limit: number;
+}
+
+export interface FixedExpense {
+  id: string;
+  type: 'personal' | 'business';
+  category: string;
+  description: string;
+  amount: number;
+  day: number;
+  cardId?: string;
+}
+
 interface FinanceStore {
   user: { id: string; email: string; username?: string } | null;
   transactions: Transaction[];
@@ -42,6 +61,9 @@ interface FinanceStore {
   monthlyLimit: number;
   piggyBank: PiggyBank | null;
   chartType: 'bar' | 'area';
+  cards: CreditCard[];
+  fixedExpenses: FixedExpense[];
+  
   setUser: (user: { id: string; email: string; username?: string } | null) => void;
   addTransaction: (transaction: Transaction) => void;
   removeTransaction: (id: string) => void;
@@ -51,6 +73,15 @@ interface FinanceStore {
   setPiggyBank: (piggyBank: PiggyBank | null) => void;
   updatePiggyBank: (amount: number) => void;
   setChartType: (type: 'bar' | 'area') => void;
+  
+  // Novas ações
+  addCard: (card: CreditCard) => void;
+  removeCard: (id: string) => void;
+  updateCard: (card: CreditCard) => void;
+  addFixedExpense: (expense: FixedExpense) => void;
+  removeFixedExpense: (id: string) => void;
+  updateFixedExpense: (expense: FixedExpense) => void;
+  
   clearAll: () => void;
 }
 
@@ -61,30 +92,22 @@ const syncStorage: StateStorage = {
   setItem: (name, value) => {
     localStorage.setItem(name, value);
     
-    // Tentar sincronizar em background para a conta logada
-    // Usar timeout para não travar a UI em caso de rede lenta ou falha
+    // Sincronização em background otimizada
     setTimeout(async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           const stateData = JSON.parse(value);
+          // Salvar o estado completo na nuvem
           await supabase.from('profiles').update({ app_state: stateData }).eq('id', session.user.id);
         }
       } catch (err) {
         console.error('Falha ao sincronizar estado com Supabase', err);
       }
-    }, 100);
+    }, 500);
   },
   removeItem: (name) => {
     localStorage.removeItem(name);
-    setTimeout(async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          await supabase.from('profiles').update({ app_state: null }).eq('id', session.user.id);
-        }
-      } catch (err) {}
-    }, 100);
   },
 };
 
@@ -92,11 +115,14 @@ export const useFinanceStore = create<FinanceStore>()(
   persist(
     (set) => ({
       user: null,
-      transactions: [], // Transações salvas
+      transactions: [],
       categories: DEFAULT_CATEGORIES,
       monthlyLimit: 0,
       piggyBank: null,
       chartType: 'bar',
+      cards: [],
+      fixedExpenses: [],
+      
       setUser: (user) => set({ user }),
       addTransaction: (transaction) =>
         set((state) => ({ transactions: [transaction, ...state.transactions] })),
@@ -117,7 +143,26 @@ export const useFinanceStore = create<FinanceStore>()(
           piggyBank: state.piggyBank ? { ...state.piggyBank, current_amount: amount } : null,
         })),
       setChartType: (chartType) => set({ chartType }),
-      clearAll: () => set({ transactions: [], piggyBank: null, user: null, categories: DEFAULT_CATEGORIES, monthlyLimit: 0, chartType: 'bar' }),
+      
+      // Implementação das novas ações
+      addCard: (card) => set((state) => ({ cards: [...state.cards, card] })),
+      removeCard: (id) => set((state) => ({ cards: state.cards.filter((c) => c.id !== id) })),
+      updateCard: (card) => set((state) => ({ cards: state.cards.map((c) => c.id === card.id ? card : c) })),
+      
+      addFixedExpense: (expense) => set((state) => ({ fixedExpenses: [...state.fixedExpenses, expense] })),
+      removeFixedExpense: (id) => set((state) => ({ fixedExpenses: state.fixedExpenses.filter((e) => e.id !== id) })),
+      updateFixedExpense: (expense) => set((state) => ({ fixedExpenses: state.fixedExpenses.map((e) => e.id === expense.id ? expense : e) })),
+      
+      clearAll: () => set({ 
+        transactions: [], 
+        piggyBank: null, 
+        user: null, 
+        categories: DEFAULT_CATEGORIES, 
+        monthlyLimit: 0, 
+        chartType: 'bar',
+        cards: [],
+        fixedExpenses: []
+      }),
     }),
     {
       name: 'finance-storage',

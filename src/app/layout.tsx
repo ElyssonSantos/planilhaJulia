@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/BottomNav";
 import { Toaster } from "@/components/ui/sonner";
 import AuthGuard from "@/components/auth-guard";
+import { Sidebar } from "@/components/Sidebar";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -37,13 +38,17 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthGuard>
-            {/* Main Container Mobile Focused on Desktop */}
-            <div className="flex flex-col min-h-screen max-w-lg mx-auto relative bg-background border-x border-accent/5 shadow-2xl overflow-x-hidden pt-safe">
-              <main className="flex-grow w-full max-w-full overflow-x-hidden">
-                {children}
-              </main>
-              <div className="h-24 md:h-28"></div> {/* Spacer for Nav */}
-              <BottomNav />
+            <div className="flex min-h-screen bg-zinc-50 dark:bg-zinc-950 transition-colors">
+              <Sidebar />
+              {/* Main Workspace */}
+              <div className="flex-grow flex flex-col min-h-screen max-w-screen-2xl mx-auto relative bg-background border-x border-accent/5 shadow-2xl overflow-x-hidden pt-safe w-full">
+                <main className="flex-grow w-full max-w-full overflow-x-hidden relative">
+                  {children}
+                </main>
+                {/* Mobile Spacing for BottomNav */}
+                <div className="h-24 md:hidden"></div> 
+                <BottomNav />
+              </div>
             </div>
             <Toaster position="top-center" richColors theme="light" closeButton />
           </AuthGuard>

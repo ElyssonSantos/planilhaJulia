@@ -92,7 +92,7 @@ export default function AuthPage() {
     setLoading(true);
     try {
       if (isLogin) {
-        // Buscar o email associado ao username no perfil
+        // 1. Buscar o email associado ao username no perfil (Otimizado para buscar apenas o necessário antes do login)
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('email, username, app_state')
@@ -102,61 +102,77 @@ export default function AuthPage() {
         if (profileError) throw profileError;
         if (!profile) throw new Error('Usuário não encontrado! Verifique seu login. 👤');
 
-        const { data, error } = await supabase.auth.signInWithPassword({
+        // 2. Tentar Login
+        const { data, error: loginError } = await supabase.auth.signInWithPassword({
           email: profile.email || '',
           password: values.password,
         });
-        if (error) throw error;
+        if (loginError) throw loginError;
 
         if (data.user) {
+          // Salvar preferência de Lembrar-me
           if (rememberMe) {
             localStorage.setItem('julia_bank_remembered_username', values.username);
           } else {
             localStorage.removeItem('julia_bank_remembered_username');
           }
 
-          // --- LOGICA DE MESCLAR / RESTAURAR ---
-          // Pegar o que já existe no PC (antes do login)
-          const localStored = localStorage.getItem('finance-storage');
-          let localState = localStored ? JSON.parse(localStored) : null;
-
-          // Pegar o que está na nuvem
+          // --- LOGICA DE MESCLAR / RESTAURAR ESTADO (Otimizada e Segura) ---
+          const currentState = useFinanceStore.getState();
           let cloudState = profile?.app_state;
-          if (typeof cloudState === 'string') cloudState = JSON.parse(cloudState);
+          
+          if (typeof cloudState === 'string') {
+            try {
+              cloudState = JSON.parse(cloudState);
+            } catch (e) {
+              console.error('Erro ao processar estado da nuvem', e);
+              cloudState = null;
+            }
+          }
 
-          // Se ambos existem, mesclar transações (IDs únicos evitam duplicatas)
-          if (localState && cloudState) {
-            const localTransactions = localState.state?.transactions || [];
-            const cloudTransactions = cloudState.state?.transactions || [];
+          // Estrutura esperada do cloudState: { state: { transactions: [], ... }, version: 0 }
+          const cloudData = cloudState?.state || null;
+          
+          if (cloudData) {
+            const localTransactions = currentState.transactions || [];
+            const cloudTransactions = cloudData.transactions || [];
 
-            // Unir e remover duplicatas pelo ID
-            const allTransactions = [...localTransactions];
-            cloudTransactions.forEach((ct: any) => {
-              if (!allTransactions.find(lt => lt.id === ct.id)) {
-                allTransactions.push(ct);
+            // Unir e remover duplicatas pelo ID de forma eficiente
+            const transMap = new Map();
+            // Primeiro as locais (prioridade se houver conflito de ID, embora improvável)
+            localTransactions.forEach(t => transMap.set(t.id, t));
+            // Depois as da nuvem
+            cloudTransactions.forEach((ct: any) => transMap.set(ct.id, ct));
+
+            // Converter de volta para array e ordenar por data
+            const mergedTransactions = Array.from(transMap.values()).sort(
+              (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            );
+
+            // Atualizar o store de forma atômica (Zustand setState)
+            // Isso evita race conditions com o middleware persist
+            useFinanceStore.setState({
+              ...cloudData, // Pegar configurações da nuvem (limites, metas, etc)
+              transactions: mergedTransactions,
+              user: {
+                id: data.user.id,
+                email: data.user.email || '',
+                username: profile?.username || values.username
               }
             });
-
-            // O estado final será o da nuvem, mas com as transações mescladas
-            cloudState.state.transactions = allTransactions;
+          } else {
+            // Se não houver dados na nuvem, apenas define o usuário logado
+            setUser({
+              id: data.user.id,
+              email: data.user.email || '',
+              username: profile?.username || values.username
+            });
           }
 
-          // Se a nuvem tem qualquer dado (ou mesclado), salvar no PC
-          if (cloudState) {
-            localStorage.setItem('finance-storage', JSON.stringify(cloudState));
-          }
-
-          setUser({
-            id: data.user.id,
-            email: data.user.email || '',
-            username: profile?.username || values.username
-          });
           toast.success(`Seja bem-vinda(o) ao Julia Bank, ${profile?.username || values.username}! 🐷🚀`);
 
-          // Forçar reload na tela home para hidratar o Zustand com o banco mesclado
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 500);
+          // Redirecionamento SPA (mais rápido que window.location.href)
+          router.push('/');
         }
       } else {
         if (!values.email) {
@@ -164,7 +180,6 @@ export default function AuthPage() {
           return;
         }
 
-        // No cadastro, usamos email, senha e salvamos o username nos metadados
         const { data, error } = await supabase.auth.signUp({
           email: values.email,
           password: values.password,

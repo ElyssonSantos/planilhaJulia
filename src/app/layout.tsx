@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/BottomNav";
@@ -7,7 +7,17 @@ import { Toaster } from "@/components/ui/sonner";
 import AuthGuard from "@/components/auth-guard";
 import { Sidebar } from "@/components/Sidebar";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const outfit = Outfit({ 
+  subsets: ["latin"], 
+  variable: "--font-heading",
+  weight: ['400', '500', '600', '700', '800', '900']
+});
+
+const jakarta = Plus_Jakarta_Sans({ 
+  subsets: ["latin"], 
+  variable: "--font-sans",
+  weight: ['400', '500', '600', '700', '800']
+});
 
 export const metadata: Metadata = {
   title: "Julia Financial | Dashboard",
@@ -30,7 +40,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning className="overflow-x-hidden">
-      <body className={`${inter.variable} antialiased min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans selection:bg-green-100 selection:text-green-900`}>
+      <body className={`${outfit.variable} ${jakarta.variable} antialiased selection:bg-green-600/20 selection:text-green-800 dark:selection:text-green-200 overflow-x-hidden`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

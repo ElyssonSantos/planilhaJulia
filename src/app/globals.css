@@ -78,7 +78,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: 'Inter', sans-serif;
+  --font-sans: var(--font-sans), system-ui, sans-serif;
+  --font-heading: var(--font-heading), system-ui, sans-serif;
 }
 
 @utility glass {
@@ -105,6 +106,9 @@
     color: var(--foreground);
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
   }
 }
 

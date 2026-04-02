@@ -63,6 +63,7 @@ interface FinanceStore {
   chartType: 'bar' | 'area';
   cards: CreditCard[];
   fixedExpenses: FixedExpense[];
+  isInitialized: boolean;
   
   setUser: (user: { id: string; email: string; username?: string } | null) => void;
   addTransaction: (transaction: Transaction) => void;
@@ -73,17 +74,17 @@ interface FinanceStore {
   setPiggyBank: (piggyBank: PiggyBank | null) => void;
   updatePiggyBank: (amount: number) => void;
   setChartType: (type: 'bar' | 'area') => void;
-  
-  // Novas ações
   addCard: (card: CreditCard) => void;
   removeCard: (id: string) => void;
   updateCard: (card: CreditCard) => void;
   addFixedExpense: (expense: FixedExpense) => void;
   removeFixedExpense: (id: string) => void;
   updateFixedExpense: (expense: FixedExpense) => void;
-  
   clearAll: () => void;
+  pullFromCloud: () => Promise<void>;
 }
+
+let syncTimeout: any = null;
 
 const syncStorage: StateStorage = {
   getItem: (name) => {
@@ -92,19 +93,23 @@ const syncStorage: StateStorage = {
   setItem: (name, value) => {
     localStorage.setItem(name, value);
     
-    // Sincronização em background otimizada
-    setTimeout(async () => {
+    if (syncTimeout) clearTimeout(syncTimeout);
+    
+    syncTimeout = setTimeout(async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           const stateData = JSON.parse(value);
-          // Salvar o estado completo na nuvem
-          await supabase.from('profiles').update({ app_state: stateData }).eq('id', session.user.id);
+          // Só sincroniza se os dados já foram inicializados/baixados da nuvem
+          // Isso evita sobrescrever dados da nuvem com o estado inicial vazio
+          if (stateData.state?.isInitialized) {
+            await supabase.from('profiles').update({ app_state: stateData }).eq('id', session.user.id);
+          }
         }
       } catch (err) {
         console.error('Falha ao sincronizar estado com Supabase', err);
       }
-    }, 500);
+    }, 1000);
   },
   removeItem: (name) => {
     localStorage.removeItem(name);
@@ -113,7 +118,7 @@ const syncStorage: StateStorage = {
 
 export const useFinanceStore = create<FinanceStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       transactions: [],
       categories: DEFAULT_CATEGORIES,
@@ -122,6 +127,7 @@ export const useFinanceStore = create<FinanceStore>()(
       chartType: 'bar',
       cards: [],
       fixedExpenses: [],
+      isInitialized: false,
       
       setUser: (user) => set({ user }),
       addTransaction: (transaction) =>
@@ -144,7 +150,6 @@ export const useFinanceStore = create<FinanceStore>()(
         })),
       setChartType: (chartType) => set({ chartType }),
       
-      // Implementação das novas ações
       addCard: (card) => set((state) => ({ cards: [...state.cards, card] })),
       removeCard: (id) => set((state) => ({ cards: state.cards.filter((c) => c.id !== id) })),
       updateCard: (card) => set((state) => ({ cards: state.cards.map((c) => c.id === card.id ? card : c) })),
@@ -161,8 +166,62 @@ export const useFinanceStore = create<FinanceStore>()(
         monthlyLimit: 0, 
         chartType: 'bar',
         cards: [],
-        fixedExpenses: []
+        fixedExpenses: [],
+        isInitialized: false
       }),
+
+      pullFromCloud: async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session?.user) return;
+
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('app_state, username')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          if (error || !profile) {
+            set({ isInitialized: true });
+            return;
+          }
+
+          let cloudState = profile.app_state;
+          if (typeof cloudState === 'string') {
+            try { cloudState = JSON.parse(cloudState); } catch { cloudState = null; }
+          }
+
+          const cloudData = cloudState?.state || null;
+          if (cloudData) {
+            const currentState = get();
+            
+            // Mesclar transações (Cloud tem prioridade)
+            const transMap = new Map();
+            (currentState.transactions || []).forEach(t => transMap.set(t.id, t));
+            (cloudData.transactions || []).forEach((ct: any) => transMap.set(ct.id, ct));
+
+            const mergedTransactions = Array.from(transMap.values()).sort(
+              (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            );
+
+            set({
+              ...cloudData,
+              transactions: mergedTransactions,
+              user: {
+                id: session.user.id,
+                email: session.user.email || '',
+                username: profile.username || session.user.user_metadata?.display_name || ''
+              },
+              isInitialized: true
+            });
+          } else {
+            set({ isInitialized: true });
+          }
+        } catch (err) {
+          console.error('Erro ao buscar dados na nuvem:', err);
+          set({ isInitialized: true });
+        }
+      }
     }),
     {
       name: 'finance-storage',

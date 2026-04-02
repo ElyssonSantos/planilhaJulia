@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, setUser, clearAll } = useFinanceStore();
+  const { user, setUser, clearAll, pullFromCloud, isInitialized } = useFinanceStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,6 +17,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
+        // --- NOVO: Puxar dados da nuvem imediatamente ---
+        if (!isInitialized) {
+          await pullFromCloud();
+        }
+
         setUser({ 
           id: session.user.id, 
           email: session.user.email || '', 
@@ -36,8 +41,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     checkUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
+        if (!isInitialized) {
+           await pullFromCloud();
+        }
         setUser({ 
           id: session.user.id, 
           email: session.user.email || '', 
@@ -45,7 +53,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         });
       } else {
         setUser(null);
-        clearAll(); // Limpar dados locais ao deslogar por segurança
+        clearAll();
         if (pathname !== '/auth') {
           router.push('/auth');
         }

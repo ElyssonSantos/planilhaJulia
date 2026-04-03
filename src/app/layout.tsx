@@ -40,7 +40,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning className="overflow-x-hidden">
-      <body className={`${outfit.variable} ${jakarta.variable} antialiased selection:bg-green-600/20 selection:text-green-800 dark:selection:text-green-200 overflow-x-hidden`}>
+      <body 
+        className={`${outfit.variable} ${jakarta.variable} antialiased selection:bg-green-600/20 selection:text-green-800 dark:selection:text-green-200 overflow-x-hidden`}
+        suppressHydrationWarning
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

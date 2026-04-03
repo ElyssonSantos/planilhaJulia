@@ -13,38 +13,62 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        // --- NOVO: Puxar dados da nuvem imediatamente ---
-        if (!isInitialized) {
-          await pullFromCloud();
-        }
+    let mounted = true;
 
-        setUser({ 
-          id: session.user.id, 
-          email: session.user.email || '', 
-          username: session.user.user_metadata?.display_name || ''
-        });
-        if (pathname === '/auth') {
-          router.push('/');
+    const checkUser = async () => {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+
+        if (session?.user) {
+          if (!isInitialized) {
+            await pullFromCloud().catch(err => console.error("Erro ao sincronizar:", err));
+          }
+
+          if (mounted) {
+            setUser({ 
+              id: session.user.id, 
+              email: session.user.email || '', 
+              username: session.user.user_metadata?.display_name || ''
+            });
+            if (pathname === '/auth') {
+              router.push('/');
+            }
+          }
+        } else {
+          if (mounted) {
+            setUser(null);
+            if (pathname !== '/auth') {
+              router.push('/auth');
+            }
+          }
         }
-      } else {
-        setUser(null);
-        if (pathname !== '/auth') {
-          router.push('/auth');
+      } catch (error) {
+        console.error('Erro no AuthGuard:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
         }
       }
-      setLoading(false);
     };
+
+    // Timeout de segurança: se após 8 segundos nada aconteceu, liberamos a tela
+    const safetyTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('AuthGuard: Timeout de segurança atingido. Forçando carregamento.');
+        setLoading(false);
+      }
+    }, 8000);
 
     checkUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return;
+
       if (session?.user) {
         if (!isInitialized) {
-           await pullFromCloud();
+           await pullFromCloud().catch(err => console.error("Erro no onAuthStateChange sync:", err));
         }
         setUser({ 
           id: session.user.id, 
@@ -61,15 +85,23 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      mounted = false;
+      clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
-  }, [pathname, router, setUser, clearAll]);
+  }, [pathname, router, setUser, clearAll, pullFromCloud, isInitialized]);
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950 space-y-4">
+      <div 
+        className="flex flex-col min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950 space-y-4"
+        suppressHydrationWarning
+      >
         <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-green-600 animate-pulse">Protegendo sua conexão...</p>
+        <div className="flex flex-col items-center space-y-2">
+          <p className="text-[10px] font-black uppercase tracking-widest text-green-600 animate-pulse">Protegendo sua conexão...</p>
+          <p className="text-[8px] text-zinc-400 dark:text-zinc-600 uppercase tracking-tighter">Validando certificado de segurança</p>
+        </div>
       </div>
     );
   }
